@@ -1,5 +1,5 @@
 ---
-title: "Simulation A | Extinct"
+title: "Simulation B | Extinct"
 format: 
   html:
     toc: true
@@ -60,13 +60,17 @@ p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_time <- 100
+extinction_times <- seq(50, 300, by = 10)
 alpha <- 0.05
 
 iterations <- 1:5
-test_times <- seq(0, 100, by = 1) + extinction_time
+offset <- 20 # from Simulation A | Extinct; maximum variance between models
 
-grid <- expand.grid(test_time = test_times, iteration = iterations)
+grid <- expand.grid(
+  extinction_time = extinction_times,
+  iteration = iterations
+) %>%
+  mutate(test_time = extinction_time + offset)
 ```
 
 Set up functions for records, surveys, and effort:
@@ -345,7 +349,7 @@ test_model <- function(model, output, alpha, test_time) {
 Set up output directory:
 
 ```{r directory}
-dir.create(file.path("Outputs", "A", "Extinct"),
+dir.create(file.path("Outputs", "B", "Extinct"),
   recursive = TRUE,
   showWarnings = FALSE
 )
@@ -360,8 +364,8 @@ set.seed(1234)
 
 rse_data <- grid %>%
   mutate(data = pmap(
-    list(test_time, iteration),
-    function(test_time, iteration) {
+    list(test_time, extinction_time, iteration),
+    function(test_time, extinction_time, iteration) {
       records <- create_records(extinction_time, pse, test_time)
       surveys <- create_surveys(test_time, eps, p_i, p_r)
       effort <- create_effort(test_time, eps)
@@ -371,14 +375,14 @@ rse_data <- grid %>%
   ))
 
 stopifnot(nrow(rse_data) == nrow(grid))
-saveRDS(rse_data, "Outputs/A/Extinct/simulated_datasets.rds")
+saveRDS(rse_data, "Outputs/B/Extinct/simulated_datasets.rds")
 ```
 
 Run models:
 
 ```{r run-models}
-if (file.exists("Outputs/A/Extinct/model_times.rds")) {
-  model_times <- readRDS("Outputs/A/Extinct/model_times.rds")
+if (file.exists("Outputs/B/Extinct/model_times.rds")) {
+  model_times <- readRDS("Outputs/B/Extinct/model_times.rds")
 } else {
   model_times <- tibble(
     model = character(), run_time = numeric(),
@@ -390,7 +394,7 @@ for (model in models) {
   model_start <- Sys.time()
   model_ran <- FALSE
 
-  model_file <- file.path("Outputs", "A", "Extinct", paste0(model, ".rds"))
+  model_file <- file.path("Outputs", "B", "Extinct", paste0(model, ".rds"))
 
   valid_file <- FALSE
   if (file.exists(model_file)) {
@@ -407,6 +411,7 @@ for (model in models) {
     results <- future_map(seq_len(nrow(grid)), function(idx) {
       iteration <- grid$iteration[idx]
       test_time <- grid$test_time[idx]
+      extinction_time <- grid$extinction_time[idx]
 
       data_i <- rse_data$data[[idx]]
 
@@ -438,8 +443,9 @@ for (model in models) {
 
       result <- if (is.null(output)) {
         tibble(
-          model = model, iteration = iteration, test_time = test_time,
-          isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
+          model = model, iteration = iteration, test_time = test_time, 
+          extinction_time = extinction_time, isextinct = NA, 
+          warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = ifelse(length(warning_msg) > 0, paste(
             warning_msg,
             collapse = " | "
@@ -449,6 +455,7 @@ for (model in models) {
       } else {
         tibble(
           model = model, iteration = iteration, test_time = test_time,
+          extinction_time = extinction_time, 
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
@@ -485,7 +492,7 @@ for (model in models) {
   gc()
 }
 
-saveRDS(model_times, "Outputs/A/Extinct/model_times.rds")
+saveRDS(model_times, "Outputs/B/Extinct/model_times.rds")
 ```
 
 # Finish
@@ -493,7 +500,7 @@ saveRDS(model_times, "Outputs/A/Extinct/model_times.rds")
 Results:
 
 ```{r results}
-model_files <- list.files("Outputs/A/Extinct", pattern = "\\.rds$", full.names = TRUE)
+model_files <- list.files("Outputs/B/Extinct", pattern = "\\.rds$", full.names = TRUE)
 model_files <- model_files[!grepl("model_times\\.rds$", model_files)]
 model_files <- model_files[!grepl("simulated_datasets\\.rds$", model_files)]
 
@@ -508,7 +515,7 @@ all_results <- map_dfr(model_files, function(model_file) {
   }
 })
 
-model_times <- readRDS("Outputs/A/Extinct/model_times.rds")
+model_times <- readRDS("Outputs/B/Extinct/model_times.rds")
 total_time <- sum(model_times$run_time) / 60
 cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
 ```
@@ -553,9 +560,9 @@ all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
 
 results_summary <- all_results %>%
-  group_by(model, test_time, isextinct) %>%
+  group_by(model, extinction_time, isextinct) %>%
   tally() %>%
-  group_by(model, test_time) %>%
+  group_by(model, extinction_time) %>%
   mutate(prop = n / sum(n))
 
 predictions <- tibble(
@@ -572,21 +579,22 @@ for (model_i in unique(all_results$model)) {
 
   accuracy_model_i <- glm(
     data = estimates,
-    formula = isextinct ~ test_time,
+    formula = isextinct ~ extinction_time,
     family = "binomial"
   )
 
-  prediction_i <- predict(accuracy_model_i, newdata = data.frame(
-    test_time = min(test_times):max(test_times)
-  ), se.fit = TRUE) %>%
-    bind_cols(data.frame(test_time = min(test_times):max(test_times)), .) %>%
+  prediction_i <- predict(
+    accuracy_model_i, newdata = data.frame(extinction_time = min(
+      extinction_times):max(extinction_times)), se.fit = TRUE) %>%
+    bind_cols(data.frame(extinction_time = min(
+      extinction_times):max(extinction_times)), .) %>%
     mutate(
       lci = plogis(fit + qnorm(0.025) * se.fit),
       uci = plogis(fit + qnorm(0.975) * se.fit),
       fit = plogis(fit),
       model = model_i
     ) %>%
-    select(model, test_time, lci, fit, uci)
+    select(model, extinction_time, lci, fit, uci)
 
   predictions <- bind_rows(predictions, prediction_i)
 }
@@ -594,32 +602,32 @@ for (model_i in unique(all_results$model)) {
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
 
-threshold <- predictions %>%
-  group_by(model) %>%
-  filter(fit > 1 - alpha) %>%
-  summarise(test_time = min(test_time))
+# threshold <- predictions %>%
+#   group_by(model) %>%
+#   filter(fit > 1 - alpha) %>%
+#   summarise(test_time = min(test_time))
 
 model_errors <- all_results %>%
   group_by(model) %>%
   summarise(error_prop = mean(error)) %>%
   filter(error_prop > 0) %>%
-  mutate(label_text = paste0(percent(error_prop), " Error"))
+  mutate(label_text = paste0(percent(error_prop, accuracy = 0.01), " Error"))
 
 model_nas <- all_results %>%
   group_by(model) %>%
   summarise(na_prop = mean(!error & is.na(isextinct))) %>%
   filter(na_prop > 0) %>%
-  mutate(label_text = paste0(percent(na_prop), " NA"))
+  mutate(label_text = paste0(percent(na_prop, accuracy = 0.01), " NA"))
 
 model_errors_dist <- all_results %>%
-  group_by(model, test_time) %>%
+  group_by(model, extinction_time) %>%
   summarise(error_prop = mean(error)) %>%
   group_by(model) %>%
   filter(any(error_prop != 0)) %>%
   ungroup()
 
 model_nas_dist <- all_results %>%
-  group_by(model, test_time) %>%
+  group_by(model, extinction_time) %>%
   summarise(na_prop = mean(!error & is.na(isextinct))) %>%
   group_by(model) %>%
   filter(any(na_prop != 0)) %>%
@@ -631,51 +639,54 @@ excluded <- tibble(model = "AL14B2") %>%
 accuracy_plot <- ggplot() +
   geom_ribbon(
     data = predictions,
-    aes(x = test_time, ymin = lci, ymax = uci, fill = model),
+    aes(x = extinction_time, ymin = lci, ymax = uci, fill = model),
     alpha = 0.2
   ) +
   geom_line(
     data = predictions,
-    aes(x = test_time, y = fit, colour = model),
+    aes(x = extinction_time, y = fit, colour = model),
     linewidth = 1
   ) +
   geom_step(
     data = model_errors_dist,
-    aes(x = test_time, y = error_prop), colour = "red",
+    aes(x = extinction_time, y = error_prop), colour = "red",
     linewidth = 1
   ) +
   geom_step(
     data = model_nas_dist,
-    aes(x = test_time, y = na_prop), colour = "grey",
+    aes(x = extinction_time, y = na_prop), colour = "grey",
     linewidth = 1
   ) +
   geom_point(
     data = results_summary,
-    aes(x = test_time, y = isextinct, colour = model, size = prop)
+    aes(x = extinction_time, y = isextinct, colour = model, size = prop)
   ) +
-  geom_vline(
-    data = threshold,
-    aes(xintercept = test_time, colour = model),
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    data = threshold,
-    aes(colour = model, yintercept = 1 - alpha),
-    linetype = "dashed"
-  ) +
+  # geom_vline(
+  #   data = threshold,
+  #   aes(xintercept = extinction_time, colour = model),
+  #   linetype = "dashed"
+  # ) +
+  # geom_hline(
+  #   data = threshold,
+  #   aes(colour = model, yintercept = 1 - alpha),
+  #   linetype = "dashed"
+  # ) +
   geom_label(
     data = model_errors,
     aes(label = label_text),
-    x = (max(test_times) + extinction_time) / 2, y = 0.5, colour = "red"
+    x = (min(extinction_times) + max(extinction_times)) / 2, 
+    y = 0.5, colour = "red"
   ) +
   geom_label(
     data = model_nas,
     aes(label = label_text),
-    x = (max(test_times) + extinction_time) / 2, y = 0.5, colour = "grey"
+    x = (min(extinction_times) + max(extinction_times)) / 2, 
+    y = 0.5, colour = "grey"
   ) +
   geom_label(
     data = excluded,
-    label = "Excluded", x = (max(test_times) + extinction_time) / 2,
+    label = "Excluded", 
+    x = (min(extinction_times) + max(extinction_times)) / 2, 
     y = 0.5, fontface = "italic"
   ) +
   scale_size_continuous(range = c(0, 1)) +
@@ -685,88 +696,12 @@ accuracy_plot <- ggplot() +
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
+    x = paste0("Extinction Time (Test Time ", offset, " years later)"),
     y = "Estimated Per-model Accuracy / NA Proportion"
   ) +
   facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
 
 accuracy_plot
-```
-
-# All Models
-
-```{r all-models}
-#| fig-dpi: 300
-#| fig-width: 8
-#| fig-height: 4
-accuracy_model <- glm(
-  data = all_results, formula = isextinct ~ test_time,
-  family = "binomial"
-)
-
-prediction <- predict(accuracy_model, newdata = data.frame(
-  test_time = min(test_times):max(test_times)
-), se.fit = TRUE) %>%
-  bind_cols(data.frame(test_time = min(test_times):max(test_times)), .) %>%
-  mutate(
-    lci = plogis(fit + qnorm(0.025) * se.fit),
-    uci = plogis(fit + qnorm(0.975) * se.fit),
-    fit = plogis(fit)
-  ) %>%
-  select(test_time, lci, fit, uci)
-
-threshold <- prediction %>%
-  filter(fit > 1 - alpha) %>%
-  summarise(test_time = min(test_time))
-
-allmodels_plot <- ggplot() +
-  geom_ribbon(
-    data = prediction, aes(x = test_time, ymin = lci, ymax = uci),
-    alpha = 0.2
-  ) +
-  geom_line(data = prediction, aes(x = test_time, y = fit), linewidth = 1) +
-  geom_vline(
-    data = threshold, aes(xintercept = test_time),
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    data = threshold, aes(yintercept = 1 - alpha),
-    linetype = "dashed"
-  ) +
-  scale_y_continuous(limits = c(0, 1)) +
-  theme_bw() +
-  theme(legend.position = "none") +
-  labs(
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated All-model Accuracy"
-  )
-
-allmodels_plot
-```
-
-# Variance
-
-```{r variance}
-#| fig-dpi: 300
-#| fig-width: 8
-#| fig-height: 4
-intermodel_variance <- predictions %>%
-  group_by(test_time) %>%
-  summarise(sd = sd(fit))
-
-variance_plot <- ggplot(data = intermodel_variance) +
-  geom_line(aes(x = test_time, y = sd), linewidth = 1) +
-  geom_vline(xintercept = intermodel_variance$test_time[which.max(
-    intermodel_variance$sd
-  )], linetype = "dashed") +
-  expand_limits(y = 0) +
-  theme_bw() +
-  labs(
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "S.D. of Estimated Per-model Accuracy Across Models"
-  )
-
-variance_plot
 ```
 
 # Errors, Warnings, etc.
