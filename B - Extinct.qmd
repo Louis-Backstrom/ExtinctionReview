@@ -60,17 +60,21 @@ p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_times <- seq(50, 300, by = 10)
+extinction_times <- seq(50, 300, by = 5)
 alpha <- 0.05
 
-iterations <- 1:5
-offset <- 20 # from Simulation A | Extinct; maximum variance between models
+iterations <- 1:10
+# offset <- 20 # from Simulation A | Extinct; maximum variance between models
+offsets <- readRDS("Outputs/A/Extinct/offsets.rds")
 
 grid <- expand.grid(
+  model = models,
   extinction_time = extinction_times,
   iteration = iterations
 ) %>%
-  mutate(test_time = extinction_time + offset)
+  left_join(., offsets, by = "model") %>% 
+  mutate(test_time = extinction_time + offset + 1)
+
 ```
 
 Set up functions for records, surveys, and effort:
@@ -80,15 +84,15 @@ create_records <- function(extinction_time, pse, test_time) {
   records <- rpois(extinction_time, pse)
   records <- rep(seq_along(records), records)
   records <- data.frame(time = records, p_ci_min = 1, p_ci = 1, p_ci_max = 1)
-
+  
   records <- convert_dodo(records,
-    init.time = 1, test.time = test_time,
-    threshold = 0.9, unique = FALSE, aggregate = "max",
-    time = "time", certainty = "p_ci",
-    certainty_lower = "p_ci_min",
-    certainty_upper = "p_ci_max"
+                          init.time = 1, test.time = test_time,
+                          threshold = 0.9, unique = FALSE, aggregate = "max",
+                          time = "time", certainty = "p_ci",
+                          certainty_lower = "p_ci_min",
+                          certainty_upper = "p_ci_max"
   )
-
+  
   return(records)
 }
 
@@ -99,13 +103,13 @@ create_surveys <- function(test_time, eps, p_i, p_r) {
     p_i_lower = p_i, p_i_upper = p_i, p_r = p_r, p_r_lower = p_r,
     p_r_upper = p_r
   )
-
+  
   return(surveys)
 }
 
 create_effort <- function(test_time, eps) {
   effort <- rep(eps, test_time)
-
+  
   return(effort)
 }
 ```
@@ -115,233 +119,233 @@ Set up functions for models:
 ```{r model-functions}
 run_model <- function(model, records, surveys, effort, alpha, test_time) {
   out <- switch(model,
-    "SL88F1" = SL88F1(records = records$ccon, alpha = alpha),
-    "SS89F1" = SS89F1(records = records$ccon, alpha = alpha),
-    "SS89B1" = SS89B1(
-      records = records$ccon, alpha = alpha, length.out = 1e4,
-      scale = 0.01
-    ),
-    "SO93F1" = SO93F1(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      test.time = test_time
-    ),
-    "SO93B1" = SO93B1(
-      records = records$ccon, init.time = 1,
-      test.time = test_time, pi = 0.5
-    ),
-    "SO93F2" = SO93F2(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      test.time = test_time, precBits = 1024
-    ),
-    "MA94F1" = MA94F1(records = records$ccon, alpha = alpha, gamma = 0.5),
-    "BU95F1" = BU95F1(records = records$cdis),
-    "BU95F2" = BU95F2(records = records$cdis),
-    "BU95F3" = BU95F3(records = records$cdis),
-    "MA97F1" = MA97F1(
-      records = records$cdis, effort = effort, alpha = alpha,
-      init.time = 1
-    ),
-    "MC98F1" = MC98F1(records = records$cdis, effort = effort),
-    "MC99F1" = MC99F1(
-      records = records$ccon, alpha = alpha,
-      test.time = test_time
-    ),
-    "WM99B1" = WM99B1(
-      records = records$cbin, surveys = 1:test_time,
-      alpha = alpha, test.time = test_time, priors = list(
-        lambda = 1e3, c = 1, d = 1
-      ), increment = 0.01
-    ),
-    "RS03F1" = RS03F1(
-      records = records$ccon, alpha = alpha,
-      conf.int = "one-sided", k = ifelse(length(
-        records$ccon
-      ) >= 10, 10, length(records$ccon)),
-      test.time = test_time
-    ),
-    "SR03F1" = SR03F1(
-      records = records$ccon, alpha = alpha,
-      test.time = test_time
-    ),
-    "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = 1),
-    "RO09B1" = RO09B1(
-      records = records$cbin, pi = 0.5, n.chains = 1,
-      n.iter = 11e3, n.burnin = 1e3
-    ),
-    "JE10F1" = JE10F1(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      test.time = test_time
-    ),
-    "JE10F2" = JE10F2(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      test.time = test_time
-    ),
-    "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
-    "SO12B1" = SO12B1(
-      records = records$ubin, init.time = 1, increment = 0.01,
-      gamma = 1, record.check = "error"
-    ),
-    "TH13B1" = TH13B1(
-      records = records$umcd,
-      priors = list(p = list(p1 = 0.5), q = list(
-        q1 = 1.0
-      )), certain = c(1), PXT = NULL, PE = NULL
-    ),
-    "TH13B2" = TH13B2(
-      records = records$umcd,
-      priors = list(p = list(p1 = c(0, 1)), q = list(
-        q1 = c(1, 1)
-      )), certain = c(1), PXT = NULL, PE = NULL,
-      n.iter = 10e3, pb = FALSE
-    ),
-    "TH13B3" = TH13B3(
-      records = records$umcd,
-      priors = list(p = list(p1 = c(0, 1)), q = list(
-        q1 = c(1, 1)
-      )), certain = c(1), PXT = NULL, PE = NULL,
-      n.iter = 10e3, pb = FALSE
-    ),
-    "AL14B1" = AL14B1(records = records$cbin),
-    "CB14B1" = CB14B1(
-      records = records$cbin, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "CB14B2" = CB14B2(
-      records = records$cbin, alpha = alpha, init.time = 1,
-      test.time = test_time, burn.in = 1e3, n.iter = 11e3
-    ),
-    "JR14F1" = JR14F1(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time
-    ),
-    "LE14B1" = LE14B1(
-      records = records$iucn, surveys = surveys,
-      threshold = 0.9, prior = c(0, 1), n.iter = 10e3
-    ),
-    "LE14B2" = LE14B2(
-      records = records$ubin, alpha = alpha, init.time = 1,
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
-    ),
-    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.01),
-    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.01),
-    "AL15B1" = AL15B1(records = records$cbin),
-    "SO16B1" = SO16B1(
-      records = records$cbin, init.time = NULL,
-      test.time = NULL, curr.time = NULL
-    ),
-    "SO16B2" = SO16B2(
-      records = records$cbin, init.time = NULL,
-      test.time = NULL, curr.time = NULL
-    ),
-    "WA16B1" = WA16B1(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      use.mpfr = FALSE, cores = 1, pb = FALSE
-    ),
-    "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
-    "BR19F1" = BR19F1(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "BR19F2" = BR19F2(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "BR19F3" = BR19F3(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "BR19F4" = BR19F4(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "BR19F5" = BR19F5(
-      records = records$ucon, alpha = alpha, init.time = 1,
-      test.time = test_time, n.iter = 10e3
-    ),
-    "TH19B1" = TH19B1(
-      records = records$iucn, surveys = surveys,
-      init.time = max(records$ccon) + 1, test.time = test_time,
-      pi = 0.5
-    ),
-    "KO20B1" = KO20B1(
-      records = records$cbin, alpha = alpha, init.time = 1,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
-    ),
-    "KO20B2" = KO20B2(
-      records = records$ubin, alpha = alpha, init.time = 1,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
-    ),
-    "KO21B1" = KO21B1(
-      records = records$ubin, alpha = alpha, init.time = 1,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
-    ),
+                "SL88F1" = SL88F1(records = records$ccon, alpha = alpha),
+                "SS89F1" = SS89F1(records = records$ccon, alpha = alpha),
+                "SS89B1" = SS89B1(
+                  records = records$ccon, alpha = alpha, length.out = 1e4,
+                  scale = 0.01
+                ),
+                "SO93F1" = SO93F1(
+                  records = records$ccon, alpha = alpha, init.time = 1,
+                  test.time = test_time
+                ),
+                "SO93B1" = SO93B1(
+                  records = records$ccon, init.time = 1,
+                  test.time = test_time, pi = 0.5
+                ),
+                "SO93F2" = SO93F2(
+                  records = records$ccon, alpha = alpha, init.time = 1,
+                  test.time = test_time, precBits = 1024
+                ),
+                "MA94F1" = MA94F1(records = records$ccon, alpha = alpha, gamma = 0.5),
+                "BU95F1" = BU95F1(records = records$cdis),
+                "BU95F2" = BU95F2(records = records$cdis),
+                "BU95F3" = BU95F3(records = records$cdis),
+                "MA97F1" = MA97F1(
+                  records = records$cdis, effort = effort, alpha = alpha,
+                  init.time = 1
+                ),
+                "MC98F1" = MC98F1(records = records$cdis, effort = effort),
+                "MC99F1" = MC99F1(
+                  records = records$ccon, alpha = alpha,
+                  test.time = test_time
+                ),
+                "WM99B1" = WM99B1(
+                  records = records$cbin, surveys = 1:test_time,
+                  alpha = alpha, test.time = test_time, priors = list(
+                    lambda = 1e3, c = 1, d = 1
+                  ), increment = 0.01
+                ),
+                "RS03F1" = RS03F1(
+                  records = records$ccon, alpha = alpha,
+                  conf.int = "one-sided", k = ifelse(length(
+                    records$ccon
+                  ) >= 10, 10, length(records$ccon)),
+                  test.time = test_time
+                ),
+                "SR03F1" = SR03F1(
+                  records = records$ccon, alpha = alpha,
+                  test.time = test_time
+                ),
+                "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = 1),
+                "RO09B1" = RO09B1(
+                  records = records$cbin, pi = 0.5, n.chains = 1,
+                  n.iter = 11e3, n.burnin = 1e3
+                ),
+                "JE10F1" = JE10F1(
+                  records = records$ccon, alpha = alpha, init.time = 1,
+                  test.time = test_time
+                ),
+                "JE10F2" = JE10F2(
+                  records = records$ccon, alpha = alpha, init.time = 1,
+                  test.time = test_time
+                ),
+                "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
+                "SO12B1" = SO12B1(
+                  records = records$ubin, init.time = 1, increment = 0.01,
+                  gamma = 1, record.check = "error"
+                ),
+                "TH13B1" = TH13B1(
+                  records = records$umcd,
+                  priors = list(p = list(p1 = 0.5), q = list(
+                    q1 = 1.0
+                  )), certain = c(1), PXT = NULL, PE = NULL
+                ),
+                "TH13B2" = TH13B2(
+                  records = records$umcd,
+                  priors = list(p = list(p1 = c(0, 1)), q = list(
+                    q1 = c(1, 1)
+                  )), certain = c(1), PXT = NULL, PE = NULL,
+                  n.iter = 10e3, pb = FALSE
+                ),
+                "TH13B3" = TH13B3(
+                  records = records$umcd,
+                  priors = list(p = list(p1 = c(0, 1)), q = list(
+                    q1 = c(1, 1)
+                  )), certain = c(1), PXT = NULL, PE = NULL,
+                  n.iter = 10e3, pb = FALSE
+                ),
+                "AL14B1" = AL14B1(records = records$cbin),
+                "CB14B1" = CB14B1(
+                  records = records$cbin, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "CB14B2" = CB14B2(
+                  records = records$cbin, alpha = alpha, init.time = 1,
+                  test.time = test_time, burn.in = 1e3, n.iter = 11e3
+                ),
+                "JR14F1" = JR14F1(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time
+                ),
+                "LE14B1" = LE14B1(
+                  records = records$iucn, surveys = surveys,
+                  threshold = 0.9, prior = c(0, 1), n.iter = 10e3
+                ),
+                "LE14B2" = LE14B2(
+                  records = records$ubin, alpha = alpha, init.time = 1,
+                  n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+                ),
+                "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.01),
+                "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.01),
+                "AL15B1" = AL15B1(records = records$cbin),
+                "SO16B1" = SO16B1(
+                  records = records$cbin, init.time = NULL,
+                  test.time = NULL, curr.time = NULL
+                ),
+                "SO16B2" = SO16B2(
+                  records = records$cbin, init.time = NULL,
+                  test.time = NULL, curr.time = NULL
+                ),
+                "WA16B1" = WA16B1(
+                  records = records$ccon, alpha = alpha, init.time = 1,
+                  use.mpfr = FALSE, cores = 1, pb = FALSE
+                ),
+                "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
+                "BR19F1" = BR19F1(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "BR19F2" = BR19F2(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "BR19F3" = BR19F3(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "BR19F4" = BR19F4(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "BR19F5" = BR19F5(
+                  records = records$ucon, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.iter = 10e3
+                ),
+                "TH19B1" = TH19B1(
+                  records = records$iucn, surveys = surveys,
+                  init.time = max(records$ccon) + 1, test.time = test_time,
+                  pi = 0.5
+                ),
+                "KO20B1" = KO20B1(
+                  records = records$cbin, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.chains = 1, n.iter = 11e3,
+                  n.burnin = 1e3, n.thin = 10
+                ),
+                "KO20B2" = KO20B2(
+                  records = records$ubin, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.chains = 1, n.iter = 11e3,
+                  n.burnin = 1e3, n.thin = 10
+                ),
+                "KO21B1" = KO21B1(
+                  records = records$ubin, alpha = alpha, init.time = 1,
+                  test.time = test_time, n.chains = 1, n.iter = 11e3,
+                  n.burnin = 1e3, n.thin = 10
+                ),
   )
-
+  
   if (is.null(out)) {
     stop("Unknown model name: ", model)
   }
-
+  
   return(out)
 }
 
 test_model <- function(model, output, alpha, test_time) {
   out <- switch(model,
-    "SL88F1" = output$conf.int[2] < test_time,
-    "SS89F1" = output$conf.int[2] < test_time,
-    "SS89B1" = output$cred.int[2] < test_time,
-    "SO93F1" = output$p.value < alpha,
-    "SO93B1" = output$p.extant < alpha,
-    "SO93F2" = output$p.value < alpha,
-    "MA94F1" = output$conf.int[3] < test_time,
-    "BU95F1" = output$p.value < alpha,
-    "BU95F2" = output$p.value < alpha,
-    "BU95F3" = output$p.value < alpha,
-    "MA97F1" = output$conf.int[2] < test_time,
-    "MC98F1" = output$p.value < alpha,
-    "MC99F1" = output$p.value < alpha,
-    "WM99B1" = output$p.extant < alpha,
-    "RS03F1" = output$p.value < alpha,
-    "SR03F1" = output$p.value < alpha,
-    "MC06F1" = output$p.value < alpha,
-    "RO09B1" = output$p.extant < alpha,
-    "JE10F1" = output$p.value < alpha,
-    "JE10F2" = output$p.value < alpha,
-    "BR12F1" = output$estimate < test_time,
-    "SO12B1" = output$Bayes.factor > (1 / alpha),
-    "TH13B1" = output$p.extant < alpha,
-    "TH13B2" = output$p.extant < alpha,
-    "TH13B3" = output$p.extant < alpha,
-    "AL14B1" = output$p.extant < alpha,
-    "CB14B1" = output$p.extant < alpha,
-    "CB14B2" = output$p.extant < alpha,
-    "JR14F1" = output$p.value < alpha,
-    "LE14B1" = output$p.extant < alpha,
-    "LE14B2" = output$p.extant < alpha,
-    "SB14B1" = output$Bayes.factor > (1 / alpha),
-    "SB14B2" = output$Bayes.factor > (1 / alpha),
-    "AL15B1" = output$p.extant < alpha,
-    "SO16B1" = output$p.extant < alpha,
-    "SO16B2" = output$p.extant < alpha,
-    "WA16B1" = output$cred.int[2] < test_time,
-    "TH17I1" = output$p.extant < alpha,
-    "BR19F1" = output$p.extant < alpha,
-    "BR19F2" = output$p.extant < alpha,
-    "BR19F3" = output$p.extant < alpha,
-    "BR19F4" = output$p.extant < alpha,
-    "BR19F5" = output$p.extant < alpha,
-    "TH19B1" = output$p.extant < alpha,
-    "KO20B1" = output$p.extant < alpha,
-    "KO20B2" = output$p.extant < alpha,
-    "KO21B1" = output$p.extant < alpha,
+                "SL88F1" = output$conf.int[2] < test_time,
+                "SS89F1" = output$conf.int[2] < test_time,
+                "SS89B1" = output$cred.int[2] < test_time,
+                "SO93F1" = output$p.value < alpha,
+                "SO93B1" = output$p.extant < alpha,
+                "SO93F2" = output$p.value < alpha,
+                "MA94F1" = output$conf.int[3] < test_time,
+                "BU95F1" = output$p.value < alpha,
+                "BU95F2" = output$p.value < alpha,
+                "BU95F3" = output$p.value < alpha,
+                "MA97F1" = output$conf.int[2] < test_time,
+                "MC98F1" = output$p.value < alpha,
+                "MC99F1" = output$p.value < alpha,
+                "WM99B1" = output$p.extant < alpha,
+                "RS03F1" = output$p.value < alpha,
+                "SR03F1" = output$p.value < alpha,
+                "MC06F1" = output$p.value < alpha,
+                "RO09B1" = output$p.extant < alpha,
+                "JE10F1" = output$p.value < alpha,
+                "JE10F2" = output$p.value < alpha,
+                "BR12F1" = output$estimate < test_time,
+                "SO12B1" = output$Bayes.factor > (1 / alpha),
+                "TH13B1" = output$p.extant < alpha,
+                "TH13B2" = output$p.extant < alpha,
+                "TH13B3" = output$p.extant < alpha,
+                "AL14B1" = output$p.extant < alpha,
+                "CB14B1" = output$p.extant < alpha,
+                "CB14B2" = output$p.extant < alpha,
+                "JR14F1" = output$p.value < alpha,
+                "LE14B1" = output$p.extant < alpha,
+                "LE14B2" = output$p.extant < alpha,
+                "SB14B1" = output$Bayes.factor > (1 / alpha),
+                "SB14B2" = output$Bayes.factor > (1 / alpha),
+                "AL15B1" = output$p.extant < alpha,
+                "SO16B1" = output$p.extant < alpha,
+                "SO16B2" = output$p.extant < alpha,
+                "WA16B1" = output$cred.int[2] < test_time,
+                "TH17I1" = output$p.extant < alpha,
+                "BR19F1" = output$p.extant < alpha,
+                "BR19F2" = output$p.extant < alpha,
+                "BR19F3" = output$p.extant < alpha,
+                "BR19F4" = output$p.extant < alpha,
+                "BR19F5" = output$p.extant < alpha,
+                "TH19B1" = output$p.extant < alpha,
+                "KO20B1" = output$p.extant < alpha,
+                "KO20B2" = output$p.extant < alpha,
+                "KO21B1" = output$p.extant < alpha,
   )
-
+  
   if (is.null(out)) {
     stop("Unknown model name: ", model)
   }
-
+  
   return(out)
 }
 ```
@@ -350,8 +354,8 @@ Set up output directory:
 
 ```{r directory}
 dir.create(file.path("Outputs", "B", "Extinct"),
-  recursive = TRUE,
-  showWarnings = FALSE
+           recursive = TRUE,
+           showWarnings = FALSE
 )
 ```
 
@@ -364,13 +368,14 @@ set.seed(1234)
 
 rse_data <- grid %>%
   mutate(data = pmap(
-    list(test_time, extinction_time, iteration),
-    function(test_time, extinction_time, iteration) {
+    list(model, test_time, extinction_time, iteration),
+    function(model, test_time, extinction_time, iteration) {
       records <- create_records(extinction_time, pse, test_time)
       surveys <- create_surveys(test_time, eps, p_i, p_r)
       effort <- create_effort(test_time, eps)
-
-      return(list(records = records, surveys = surveys, effort = effort))
+      
+      return(list(records = records, 
+                  surveys = surveys, effort = effort))
     }
   ))
 
@@ -393,33 +398,39 @@ if (file.exists("Outputs/B/Extinct/model_times.rds")) {
 for (model in models) {
   model_start <- Sys.time()
   model_ran <- FALSE
-
+  
   model_file <- file.path("Outputs", "B", "Extinct", paste0(model, ".rds"))
-
+  
+  model_grid <- grid %>% 
+    filter(model == !!model)
+  
+  model_data <- rse_data %>%
+    filter(model == !!model)
+  
   valid_file <- FALSE
   if (file.exists(model_file)) {
     check <- readRDS(model_file)
-    if (!is.null(check$results) && nrow(check$results) == nrow(grid)) {
+    if (!is.null(check$results) && nrow(check$results) == nrow(model_grid)) {
       valid_file <- TRUE
     }
     rm(check)
   }
-
+  
   if (!valid_file || overwrite == TRUE) {
     model_ran <- TRUE
-
-    results <- future_map(seq_len(nrow(grid)), function(idx) {
-      iteration <- grid$iteration[idx]
-      test_time <- grid$test_time[idx]
-      extinction_time <- grid$extinction_time[idx]
-
-      data_i <- rse_data$data[[idx]]
-
+    
+    results <- future_map(seq_len(nrow(model_grid)), function(idx) {
+      iteration <- model_grid$iteration[idx]
+      test_time <- model_grid$test_time[idx]
+      extinction_time <- model_grid$extinction_time[idx]
+      
+      data_i <- model_data$data[[idx]]
+      
       iteration_start <- Sys.time()
-
+      
       warning_msg <- character()
       error_msg <- NA_character_
-
+      
       output <- tryCatch(
         withCallingHandlers(
           run_model(
@@ -437,10 +448,10 @@ for (model in models) {
           NULL
         }
       )
-
+      
       i_time <- difftime(Sys.time(), iteration_start, units = "secs") %>%
         as.numeric()
-
+      
       result <- if (is.null(output)) {
         tibble(
           model = model, iteration = iteration, test_time = test_time, 
@@ -466,21 +477,21 @@ for (model in models) {
           error_msg = NA_character_, run_time = i_time, end_time = Sys.time()
         )
       }
-
+      
       rm(output)
       gc()
-
+      
       return(result)
     }, .options = furrr_options(seed = TRUE))
-
+    
     all_results <- bind_rows(results)
-
+    
     saveRDS(list(model = model, results = all_results), model_file)
   }
-
+  
   if (model_ran == TRUE) {
     m_time <- as.numeric(difftime(Sys.time(), model_start, units = "secs"))
-
+    
     model_times <- model_times %>%
       filter(model != !!model) %>%
       bind_rows(tibble(
@@ -488,7 +499,7 @@ for (model in models) {
         end_time = Sys.time()
       ))
   }
-
+  
   gc()
 }
 
@@ -506,7 +517,7 @@ model_files <- model_files[!grepl("simulated_datasets\\.rds$", model_files)]
 
 all_results <- map_dfr(model_files, function(model_file) {
   results_file <- readRDS(model_file)
-
+  
   if (!is.null(results_file$results)) {
     results_file$results
   } else {
@@ -534,7 +545,7 @@ ggplot(model_times) +
 
 ggplot(model_times) +
   geom_bar(aes(x = "", y = run_time / 60, fill = factor(model, levels = models)),
-    stat = "identity", width = 1, colour = "black"
+           stat = "identity", width = 1, colour = "black"
   ) +
   coord_polar("y", start = 0) +
   labs(fill = "Model") +
@@ -576,13 +587,13 @@ predictions <- tibble(
 for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
     filter(model == model_i)
-
+  
   accuracy_model_i <- glm(
     data = estimates,
     formula = isextinct ~ extinction_time,
     family = "binomial"
   )
-
+  
   prediction_i <- predict(
     accuracy_model_i, newdata = data.frame(extinction_time = min(
       extinction_times):max(extinction_times)), se.fit = TRUE) %>%
@@ -595,7 +606,7 @@ for (model_i in unique(all_results$model)) {
       model = model_i
     ) %>%
     select(model, extinction_time, lci, fit, uci)
-
+  
   predictions <- bind_rows(predictions, prediction_i)
 }
 
@@ -635,6 +646,10 @@ model_nas_dist <- all_results %>%
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
+
+predictions <- predictions %>% 
+  left_join(offsets, by = "model") %>%
+  mutate(model_label = paste0(model, " (", offset, ")"))
 
 accuracy_plot <- ggplot() +
   geom_ribbon(
@@ -696,10 +711,11 @@ accuracy_plot <- ggplot() +
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    x = paste0("Extinction Time (Test Time ", offset, " years later)"),
+    x = paste0("Extinction Time (Test Time at offset + 1 years later)"),
     y = "Estimated Per-model Accuracy / NA Proportion"
   ) +
-  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
+  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all",
+             labeller = labeller(model = setNames(predictions$model_label, predictions$model)))
 
 accuracy_plot
 ```

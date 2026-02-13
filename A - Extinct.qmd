@@ -599,6 +599,12 @@ threshold <- predictions %>%
   filter(fit > 1 - alpha) %>%
   summarise(test_time = min(test_time))
 
+offsets <- predictions %>%
+  group_by(model) %>%
+  filter(fit > 0.5) %>%
+  summarise(offset = min(test_time) - extinction_time)
+saveRDS(offsets, "Outputs/A/Extinct/offsets.rds")
+
 model_errors <- all_results %>%
   group_by(model) %>%
   summarise(error_prop = mean(error)) %>%
