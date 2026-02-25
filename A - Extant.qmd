@@ -49,7 +49,7 @@ plan(multisession, workers = floor(parallel::detectCores() * 0.75))
 Set key parameters:
 
 ```{r overwrite}
-overwrite <- FALSE
+overwrite <- TRUE
 ```
 
 ```{r parameters}
@@ -63,7 +63,7 @@ extinction_time <- 100
 alpha <- 0.05
 
 iterations <- 1:100
-test_times <- seq(50, extinction_time, by = 1)
+test_times <- seq(25, extinction_time, by = 1)
 
 grid <- expand.grid(iteration = iterations)
 ```

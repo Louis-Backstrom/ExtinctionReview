@@ -73,7 +73,8 @@ grid <- expand.grid(
   iteration = iterations
 ) %>%
   left_join(., offsets, by = "model") %>% 
-  mutate(test_time = extinction_time + offset + 1)
+  mutate(test_time = extinction_time + offset + 1) # absolute
+  # mutate(test_time = ceiling(extinction_time * (1 + offset / 100)) + 1) # relative
 
 ```
 
@@ -593,7 +594,14 @@ for (model_i in unique(all_results$model)) {
     formula = isextinct ~ extinction_time,
     family = "binomial"
   )
-  
+
+  library(mgcv)
+  accuracy_model_i <- gam(
+    data = estimates,
+    formula = isextinct ~ s(extinction_time),
+    family = "binomial"
+  )
+
   prediction_i <- predict(
     accuracy_model_i, newdata = data.frame(extinction_time = min(
       extinction_times):max(extinction_times)), se.fit = TRUE) %>%
