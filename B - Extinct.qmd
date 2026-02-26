@@ -65,14 +65,14 @@ extinction_times <- seq(50, 300, by = 10)
 alpha <- 0.05
 
 iterations <- 1:10
-offsets <- c(10, 20, 50)
+
+model_offsets <- read_rds("Outputs/A/Extinct/offsets.rds") %>%
+  mutate(model = as.character(model))
 
 grid <- expand.grid(
   extinction_time = extinction_times,
-  iteration = iterations,
-  offset = offsets
-) %>%
-  mutate(test_time = extinction_time + offset)
+  iteration = iterations
+)
 ```
 
 Set up functions for records, surveys, and effort:
@@ -359,27 +359,6 @@ dir.create(file.path("Outputs", "B", "Extinct"),
 
 # Run
 
-Generate datasets:
-
-```{r generate-datasets}
-set.seed(1234)
-
-rse_data <- grid %>%
-  mutate(data = pmap(
-    list(test_time, extinction_time, iteration),
-    function(test_time, extinction_time, iteration) {
-      records <- create_records(extinction_time, pse, test_time)
-      surveys <- create_surveys(test_time, eps, p_i, p_r)
-      effort <- create_effort(test_time, eps)
-
-      return(list(records = records, surveys = surveys, effort = effort))
-    }
-  ))
-
-stopifnot(nrow(rse_data) == nrow(grid))
-saveRDS(rse_data, "Outputs/B/Extinct/simulated_datasets.rds")
-```
-
 Run models:
 
 ```{r run-models}
@@ -407,18 +386,27 @@ for (model in models) {
     rm(check)
   }
 
+  model_offset <- model_offsets %>%
+    filter(model == !!model) %>%
+    pull(offset)
+
+  if (length(model_offset) == 0) {
+    stop("No offset found for model: ", model)
+  }
+
   if (!valid_file || overwrite == TRUE) {
     model_ran <- TRUE
 
     results <- future_map(seq_len(nrow(grid)), function(idx) {
       iteration <- grid$iteration[idx]
-      offset <- grid$offset[idx]
-      test_time <- grid$test_time[idx]
       extinction_time <- grid$extinction_time[idx]
-
-      data_i <- rse_data$data[[idx]]
+      test_time <- extinction_time + model_offset
 
       iteration_start <- Sys.time()
+
+      records <- create_records(extinction_time, pse, test_time)
+      surveys <- create_surveys(test_time, eps, p_i, p_r)
+      effort <- create_effort(test_time, eps)
 
       warning_msg <- character()
       error_msg <- NA_character_
@@ -426,9 +414,8 @@ for (model in models) {
       output <- tryCatch(
         withCallingHandlers(
           run_model(
-            model = model, records = data_i$records,
-            surveys = data_i$surveys, effort = data_i$effort,
-            alpha = alpha, test_time = test_time
+            model = model, records = records, surveys = surveys,
+            effort = effort, alpha = alpha, test_time = test_time
           ),
           warning = function(w) {
             warning_msg <<- c(warning_msg, conditionMessage(w))
@@ -446,8 +433,8 @@ for (model in models) {
 
       result <- if (is.null(output)) {
         tibble(
-          model = model, iteration = iteration, offset = offset,
-          test_time = test_time, extinction_time = extinction_time, 
+          model = model, iteration = iteration, offset = model_offset,
+          test_time = test_time, extinction_time = extinction_time,
           isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
             tbl <- table(warning_msg)
@@ -464,7 +451,7 @@ for (model in models) {
         )
       } else {
         tibble(
-          model = model, iteration = iteration, offset = offset,
+          model = model, iteration = iteration, offset = model_offset,
           test_time = test_time, extinction_time = extinction_time,
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
@@ -568,13 +555,12 @@ models <- readxl::read_xlsx("EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   pull(ID)
 
 all_results <- all_results %>%
-  mutate(model = factor(model, levels = models),
-         offset = factor(offset))
+  mutate(model = factor(model, levels = models))
 
 results_summary <- all_results %>%
-  group_by(model, offset, extinction_time, isextinct) %>%
+  group_by(model, extinction_time, isextinct) %>%
   tally() %>%
-  group_by(model, offset, extinction_time) %>%
+  group_by(model, extinction_time) %>%
   mutate(prop = n / sum(n))
 
 predictions <- tibble(
@@ -587,68 +573,62 @@ predictions <- tibble(
 )
 
 for (model_i in unique(all_results$model)) {
-  for (offset_i in unique(all_results$offset)) {
-    estimates <- all_results %>%
-      filter(model == model_i, offset == offset_i)
+  estimates <- all_results %>%
+    filter(model == model_i)
 
-    accuracy_model_i <- glm(
-      data = estimates,
-      formula = isextinct ~ extinction_time,
-      family = "binomial"
-    )
+  accuracy_model_i <- glm(
+    data = estimates,
+    formula = isextinct ~ extinction_time,
+    family = "binomial"
+  )
 
-    prediction_i <- predict(
-      accuracy_model_i,
-      newdata = data.frame(extinction_time = min(
-        extinction_times
-      ):max(extinction_times)), se.fit = TRUE
+  prediction_i <- predict(
+    accuracy_model_i,
+    newdata = data.frame(extinction_time = min(
+      extinction_times
+    ):max(extinction_times)), se.fit = TRUE
+  ) %>%
+    bind_cols(data.frame(extinction_time = min(
+      extinction_times
+    ):max(extinction_times)), .) %>%
+    mutate(
+      lci = plogis(fit + qnorm(0.025) * se.fit),
+      uci = plogis(fit + qnorm(0.975) * se.fit),
+      fit = plogis(fit),
+      model = model_i
     ) %>%
-      bind_cols(data.frame(extinction_time = min(
-        extinction_times
-      ):max(extinction_times)), .) %>%
-      mutate(
-        lci = plogis(fit + qnorm(0.025) * se.fit),
-        uci = plogis(fit + qnorm(0.975) * se.fit),
-        fit = plogis(fit),
-        model = model_i,
-        offset = offset_i
-      ) %>%
-      select(model, offset, extinction_time, lci, fit, uci)
+    select(model, extinction_time, lci, fit, uci)
 
-    predictions <- bind_rows(predictions, prediction_i)
-  }
+  predictions <- bind_rows(predictions, prediction_i)
 }
 
 predictions <- predictions %>%
-  mutate(
-    model = factor(model, levels = models),
-    offset = factor(offset)
-  )
+  mutate(model = factor(model, levels = models))
 
 # threshold <- predictions %>%
 #   group_by(model) %>%
 #   filter(fit > 1 - alpha) %>%
 #   summarise(test_time = min(test_time))
-# 
+#
 # model_errors <- all_results %>%
 #   group_by(model) %>%
 #   summarise(error_prop = mean(error)) %>%
 #   filter(error_prop > 0) %>%
 #   mutate(label_text = paste0(percent(error_prop, accuracy = 0.01), " Error"))
-# 
+#
 # model_nas <- all_results %>%
 #   group_by(model) %>%
 #   summarise(na_prop = mean(!error & is.na(isextinct))) %>%
 #   filter(na_prop > 0) %>%
 #   mutate(label_text = paste0(percent(na_prop, accuracy = 0.01), " NA"))
-# 
+#
 # model_errors_dist <- all_results %>%
 #   group_by(model, offset, extinction_time) %>%
 #   summarise(error_prop = mean(error)) %>%
 #   group_by(model) %>%
 #   filter(any(error_prop != 0)) %>%
 #   ungroup()
-# 
+#
 # model_nas_dist <- all_results %>%
 #   group_by(model, offset, extinction_time) %>%
 #   summarise(na_prop = mean(!error & is.na(isextinct))) %>%
@@ -659,21 +639,25 @@ predictions <- predictions %>%
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
+model_labels <- setNames(
+  paste0(
+    levels(all_results$model),
+    " (",
+    model_offsets$offset[match(levels(all_results$model), model_offsets$model)],
+    ")"
+  ),
+  levels(all_results$model)
+)
+
 accuracy_plot <- ggplot() +
   geom_ribbon(
     data = predictions,
-    aes(
-      x = extinction_time, ymin = lci, ymax = uci,
-      fill = offset, group = offset
-    ),
+    aes(x = extinction_time, ymin = lci, ymax = uci),
     alpha = 0.2
   ) +
   geom_line(
     data = predictions,
-    aes(
-      x = extinction_time, y = fit,
-      colour = offset, group = offset
-    ),
+    aes(x = extinction_time, y = fit),
     linewidth = 1
   ) +
   # geom_step(
@@ -688,10 +672,7 @@ accuracy_plot <- ggplot() +
   # ) +
   geom_point(
     data = results_summary,
-    aes(
-      x = extinction_time, y = isextinct,
-      colour = offset, group = offset, size = prop
-    )
+    aes(x = extinction_time, y = isextinct, size = prop)
   ) +
   # geom_vline(
   #   data = threshold,
@@ -721,8 +702,6 @@ accuracy_plot <- ggplot() +
     x = (min(extinction_times) + max(extinction_times)) / 2,
     y = 0.5, fontface = "italic"
   ) +
-  scale_colour_brewer(palette = "Dark2") +
-  scale_fill_brewer(palette = "Dark2") +
   scale_size_continuous(range = c(0, 1)) +
   theme_classic() +
   theme(
@@ -733,8 +712,10 @@ accuracy_plot <- ggplot() +
     x = paste0("Extinction Time (Test Time at offset years later)"),
     y = "Estimated Per-model Accuracy / NA Proportion"
   ) +
-  facet_nested_wrap(~ model + offset, drop = FALSE, ncol = 8 * length(offsets), 
-                    nrow = 6)
+  facet_wrap(~model,
+    drop = FALSE, ncol = 8, nrow = 6, axes = "all",
+    labeller = labeller(model = model_labels)
+  )
 
 accuracy_plot
 ```

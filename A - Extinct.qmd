@@ -610,7 +610,7 @@ threshold <- predictions %>%
 offsets <- predictions %>%
   group_by(model) %>%
   filter(fit > 0.5) %>%
-  summarise(offset = min(test_time) - extinction_time)
+  summarise(offset = 10 * ceiling((min(test_time) - extinction_time + 1) / 10))
 saveRDS(offsets, "Outputs/A/Extinct/offsets.rds")
 
 model_errors <- all_results %>%
