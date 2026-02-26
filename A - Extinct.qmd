@@ -440,11 +440,18 @@ for (model in models) {
         tibble(
           model = model, iteration = iteration, test_time = test_time,
           isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
-          warning_msg = ifelse(length(warning_msg) > 0, paste(
-            warning_msg,
-            collapse = " | "
-          ), NA_character_),
-          error_msg = error_msg, run_time = i_time, end_time = Sys.time()
+          warning_msg = if (length(warning_msg) > 0) {
+            tbl <- table(warning_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+          } else {
+            NA_character_
+          },
+          error_msg = if (length(error_msg) > 0) {
+            tbl <- table(error_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+          } else {
+            NA_character_
+          }, run_time = i_time, end_time = Sys.time()
         )
       } else {
         tibble(
@@ -452,7 +459,8 @@ for (model in models) {
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            paste(warning_msg, collapse = " | ")
+            tbl <- table(warning_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
           } else {
             NA_character_
           },

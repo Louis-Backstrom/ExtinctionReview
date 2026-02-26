@@ -446,11 +446,17 @@ for (model in models) {
           last_time = max(records$ccon), isextinct = NA,
           warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
-            paste(warning_msg, collapse = " | ")
+            tbl <- table(warning_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
           } else {
             NA_character_
           },
-          error_msg = error_msg, run_time = i_time, end_time = Sys.time()
+          error_msg = if (length(error_msg) > 0) {
+            tbl <- table(error_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+          } else {
+            NA_character_
+          }, run_time = i_time, end_time = Sys.time()
         )
       } else {
         tibble(
@@ -460,7 +466,8 @@ for (model in models) {
           ),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            paste(warning_msg, collapse = " | ")
+            tbl <- table(warning_msg)
+            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
           } else {
             NA_character_
           },
