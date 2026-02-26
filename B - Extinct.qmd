@@ -61,7 +61,7 @@ p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_times <- seq(50, 300, by = 5)
+extinction_times <- seq(50, 300, by = 10)
 alpha <- 0.05
 
 iterations <- 1:10

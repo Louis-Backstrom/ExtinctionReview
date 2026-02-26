@@ -1,0 +1,5 @@
+library(quarto)
+
+quarto_render("A - Extinct.qmd")
+quarto_render("A - Extant.qmd")
+quarto_render("B - Extinct.qmd")
