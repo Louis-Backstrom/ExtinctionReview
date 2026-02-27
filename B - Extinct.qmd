@@ -38,6 +38,8 @@ Get models:
 models <- readxl::read_xlsx("EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   filter(`R?` == "✓") %>%
+  # filter(ID %in% c("SL88F1", "SS89F1", "SS89B1", "SO93F1", "SO93B1", "SO93F2",
+  #                  "RS03F1", "SR03F1", "JE10F1", "AL14B1", "SO16B2", "KO20B2")) %>%
   pull(ID)
 ```
 
@@ -55,24 +57,24 @@ overwrite <- FALSE
 ```
 
 ```{r parameters}
+alpha <- 0.05
+
 eps <- 0.5
 p_i <- 0.7
 p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_times <- seq(50, 300, by = 10)
-alpha <- 0.05
-
-iterations <- 1:10
-
-model_offsets <- read_rds("Outputs/A/Extinct/offsets.rds") %>%
-  mutate(model = as.character(model))
+extinction_times <- seq(50, 250, by = 20)
+offsets <- seq(0, 100, by = 1)
+iterations <- 1:5
 
 grid <- expand.grid(
   extinction_time = extinction_times,
+  offset = offsets,
   iteration = iterations
-)
+) %>%
+  mutate(test_time = extinction_time + offset)
 ```
 
 Set up functions for records, surveys, and effort:
@@ -386,13 +388,12 @@ for (model in models) {
     rm(check)
   }
 
-  model_offset <- model_offsets %>%
-    filter(model == !!model) %>%
-    pull(offset)
+  broken_file <- file.path(
+    "Outputs", "B", "Extinct",
+    paste0(model, "_broken_iterations.rds")
+  )
 
-  if (length(model_offset) == 0) {
-    stop("No offset found for model: ", model)
-  }
+  broken_iterations <- list()
 
   if (!valid_file || overwrite == TRUE) {
     model_ran <- TRUE
@@ -400,78 +401,131 @@ for (model in models) {
     results <- future_map(seq_len(nrow(grid)), function(idx) {
       iteration <- grid$iteration[idx]
       extinction_time <- grid$extinction_time[idx]
-      test_time <- extinction_time + model_offset
+      test_time <- grid$test_time[idx]
+      offset <- grid$offset[idx]
 
       iteration_start <- Sys.time()
 
-      records <- create_records(extinction_time, pse, test_time)
-      surveys <- create_surveys(test_time, eps, p_i, p_r)
-      effort <- create_effort(test_time, eps)
+      tryCatch(
+        {
+          records <- create_records(extinction_time, pse, test_time)
+          surveys <- create_surveys(test_time, eps, p_i, p_r)
+          effort <- create_effort(test_time, eps)
 
-      warning_msg <- character()
-      error_msg <- NA_character_
+          warning_msg <- character()
 
-      output <- tryCatch(
-        withCallingHandlers(
-          run_model(
-            model = model, records = records, surveys = surveys,
-            effort = effort, alpha = alpha, test_time = test_time
-          ),
-          warning = function(w) {
-            warning_msg <<- c(warning_msg, conditionMessage(w))
-            invokeRestart("muffleWarning")
-          }
-        ),
+          output <- withCallingHandlers(
+            run_model(
+              model = model,
+              records = records,
+              surveys = surveys,
+              effort = effort,
+              alpha = alpha,
+              test_time = test_time
+            ),
+            warning = function(w) {
+              warning_msg <<- c(warning_msg, conditionMessage(w))
+              invokeRestart("muffleWarning")
+            }
+          )
+
+          tibble(
+            model = model,
+            iteration = iteration,
+            offset = offset,
+            test_time = test_time,
+            extinction_time = extinction_time,
+            isextinct = test_model(model, output, alpha, test_time),
+            warning = length(warning_msg) > 0,
+            error = FALSE,
+            warning_msg = if (length(warning_msg) > 0) {
+              paste(unique(warning_msg), collapse = " | ")
+            } else {
+              NA_character_
+            },
+            error_msg = NA_character_,
+            run_time = as.numeric(difftime(Sys.time(), iteration_start, units = "secs")),
+            end_time = Sys.time()
+          )
+        },
         error = function(e) {
-          error_msg <<- conditionMessage(e)
-          NULL
+          fail_dir <- file.path("Outputs", "B", "Extinct", "failed_records")
+          dir.create(fail_dir, showWarnings = FALSE, recursive = TRUE)
+
+          fail_file <- file.path(
+            fail_dir,
+            paste0(
+              model,
+              "_iter", iteration,
+              "_ext", extinction_time,
+              "_off", offset,
+              ".rds"
+            )
+          )
+
+          saveRDS(
+            list(
+              model = model,
+              iteration = iteration,
+              extinction_time = extinction_time,
+              offset = offset,
+              test_time = test_time,
+              records = if (exists("records")) records else NULL,
+              surveys = if (exists("surveys")) surveys else NULL,
+              effort = if (exists("effort")) effort else NULL,
+              error_message = conditionMessage(e),
+              timestamp = Sys.time()
+            ),
+            fail_file
+          )
+
+          tibble(
+            model = model,
+            iteration = iteration,
+            offset = offset,
+            test_time = test_time,
+            extinction_time = extinction_time,
+            isextinct = NA,
+            warning = FALSE,
+            error = TRUE,
+            warning_msg = NA_character_,
+            error_msg = conditionMessage(e),
+            run_time = NA_real_,
+            end_time = Sys.time()
+          )
         }
       )
-
-      i_time <- difftime(Sys.time(), iteration_start, units = "secs") %>%
-        as.numeric()
-
-      result <- if (is.null(output)) {
-        tibble(
-          model = model, iteration = iteration, offset = model_offset,
-          test_time = test_time, extinction_time = extinction_time,
-          isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
-          warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
-          } else {
-            NA_character_
-          },
-          error_msg = if (length(error_msg) > 0) {
-            tbl <- table(error_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
-          } else {
-            NA_character_
-          }, run_time = i_time, end_time = Sys.time()
-        )
-      } else {
-        tibble(
-          model = model, iteration = iteration, offset = model_offset,
-          test_time = test_time, extinction_time = extinction_time,
-          isextinct = test_model(model, output, alpha, test_time),
-          warning = length(warning_msg) > 0, error = FALSE,
-          warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
-          } else {
-            NA_character_
-          },
-          error_msg = NA_character_, run_time = i_time, end_time = Sys.time()
-        )
-      }
-
-      rm(output)
-      gc()
-
-      return(result)
     }, .options = furrr_options(seed = TRUE))
 
+    stopifnot(length(results) == nrow(grid))
+
+    if (any(vapply(results, is.null, logical(1)))) {
+      null_idx <- which(vapply(results, is.null, logical(1)))
+
+      catastrophic_failures <- grid[null_idx, ]
+      catastrophic_failures$error_msg <- "Worker crashed (NULL result)"
+      catastrophic_failures$model <- model
+
+      saveRDS(
+        catastrophic_failures,
+        file.path(
+          "Outputs", "B", "Extinct",
+          paste0(model, "_catastrophic_failures.rds")
+        )
+      )
+
+      stop("Catastrophic worker failure detected.")
+    }
+
     all_results <- bind_rows(results)
+
+    broken_rows <- all_results %>%
+      filter(error == TRUE)
+
+    if (nrow(broken_rows) > 0) {
+      saveRDS(broken_rows, broken_file)
+      message("Saved ", nrow(broken_rows), " broken iterations for ", model)
+    }
 
     saveRDS(list(model = model, results = all_results), model_file)
   }
@@ -516,6 +570,49 @@ all_results <- map_dfr(model_files, function(model_file) {
 model_times <- readRDS("Outputs/B/Extinct/model_times.rds")
 total_time <- sum(model_times$run_time) / 60
 cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
+```
+# New Accuracy
+
+```{r}
+accuracy_results <- expand.grid(
+  model = models,
+  extinction_time = extinction_times
+)
+
+for (i in 1:nrow(accuracy_results)) {
+  data <- all_results %>%
+    filter(
+      model == accuracy_results$model[i],
+      extinction_time == accuracy_results$extinction_time[i]
+    )
+
+  model <- glm(data = data, formula = isextinct ~ offset, family = "binomial")
+
+  coefs <- coef(model)
+
+  beta0 <- coefs[1]
+  beta1 <- coefs[2]
+
+  threshold <- 1 - alpha
+
+  offset_star <- (qlogis(threshold) - beta0) / beta1
+
+  accuracy_results$offset_star[i] <- offset_star
+}
+
+offset_plot <- ggplot(accuracy_results) +
+  geom_line(aes(x = extinction_time, y = offset_star)) +
+  expand_limits(y = 0) +
+  theme_classic() +
+  theme(
+    legend.position = "none", strip.background = element_blank(),
+    strip.text = element_text(family = "mono", face = "bold")
+  ) +
+  labs(
+    x = paste0("Extinction Time"),
+    y = "Estimated Offset Required for >95% Accuracy"
+  ) +
+  facet_wrap(~model, ncol = 8, nrow = 6, axes = "all", scales = "free_y")
 ```
 
 # Runtime
@@ -638,16 +735,6 @@ predictions <- predictions %>%
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
-
-model_labels <- setNames(
-  paste0(
-    levels(all_results$model),
-    " (",
-    model_offsets$offset[match(levels(all_results$model), model_offsets$model)],
-    ")"
-  ),
-  levels(all_results$model)
-)
 
 accuracy_plot <- ggplot() +
   geom_ribbon(
