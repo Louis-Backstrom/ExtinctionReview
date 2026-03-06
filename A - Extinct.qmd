@@ -27,6 +27,7 @@ library(tidyverse)
 library(future)
 library(furrr)
 library(scales)
+library(ggh4x)
 
 `%notin%` <- Negate(`%in%`)
 ```
@@ -550,9 +551,6 @@ ggplot(model_times) +
 # Accuracy
 
 ```{r accuracy}
-#| fig-dpi: 600
-#| fig-width: 16
-#| fig-height: 8
 models <- readxl::read_xlsx("EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
@@ -607,85 +605,33 @@ threshold <- predictions %>%
   filter(fit > 1 - alpha) %>%
   summarise(test_time = min(test_time))
 
-offsets <- predictions %>%
-  group_by(model) %>%
-  filter(fit > 0.5) %>%
-  summarise(offset = 10 * ceiling((min(test_time) - extinction_time + 1) / 10))
-saveRDS(offsets, "Outputs/A/Extinct/offsets.rds")
-
-model_errors <- all_results %>%
-  group_by(model) %>%
-  summarise(error_prop = mean(error)) %>%
-  filter(error_prop > 0) %>%
-  mutate(label_text = paste0(percent(error_prop), " Error"))
-
-model_nas <- all_results %>%
-  group_by(model) %>%
-  summarise(na_prop = mean(!error & is.na(isextinct))) %>%
-  filter(na_prop > 0) %>%
-  mutate(label_text = paste0(percent(na_prop), " NA"))
-
-model_errors_dist <- all_results %>%
-  group_by(model, test_time) %>%
-  summarise(error_prop = mean(error)) %>%
-  group_by(model) %>%
-  filter(any(error_prop != 0)) %>%
-  ungroup()
-
-model_nas_dist <- all_results %>%
-  group_by(model, test_time) %>%
-  summarise(na_prop = mean(!error & is.na(isextinct))) %>%
-  group_by(model) %>%
-  filter(any(na_prop != 0)) %>%
-  ungroup()
-
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
 accuracy_plot <- ggplot() +
   geom_ribbon(
     data = predictions,
-    aes(x = test_time, ymin = lci, ymax = uci, fill = model),
+    aes(x = test_time, ymin = lci, ymax = uci),
     alpha = 0.2
   ) +
   geom_line(
     data = predictions,
-    aes(x = test_time, y = fit, colour = model),
-    linewidth = 1
-  ) +
-  geom_step(
-    data = model_errors_dist,
-    aes(x = test_time, y = error_prop), colour = "red",
-    linewidth = 1
-  ) +
-  geom_step(
-    data = model_nas_dist,
-    aes(x = test_time, y = na_prop), colour = "grey",
+    aes(x = test_time, y = fit),
     linewidth = 1
   ) +
   geom_point(
     data = results_summary,
-    aes(x = test_time, y = isextinct, colour = model, size = prop)
+    aes(x = test_time, y = isextinct, size = prop)
   ) +
   geom_vline(
     data = threshold,
-    aes(xintercept = test_time, colour = model),
+    aes(xintercept = test_time),
     linetype = "dashed"
   ) +
   geom_hline(
     data = threshold,
-    aes(colour = model, yintercept = 1 - alpha),
+    aes(yintercept = 1 - alpha),
     linetype = "dashed"
-  ) +
-  geom_label(
-    data = model_errors,
-    aes(label = label_text),
-    x = (max(test_times) + extinction_time) / 2, y = 0.5, colour = "red"
-  ) +
-  geom_label(
-    data = model_nas,
-    aes(label = label_text),
-    x = (max(test_times) + extinction_time) / 2, y = 0.5, colour = "grey"
   ) +
   geom_label(
     data = excluded,
@@ -700,87 +646,26 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated Per-model Accuracy / NA Proportion"
-  ) +
-  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
-
-accuracy_plot
+    y = "Estimated Per-model Accuracy"
+  )
 ```
 
-# All Models
-
-```{r all-models}
-#| fig-dpi: 300
-#| fig-width: 8
-#| fig-height: 4
-accuracy_model <- glm(
-  data = all_results, formula = isextinct ~ test_time,
-  family = "binomial"
-)
-
-prediction <- predict(accuracy_model, newdata = data.frame(
-  test_time = min(test_times):max(test_times)
-), se.fit = TRUE) %>%
-  bind_cols(data.frame(test_time = min(test_times):max(test_times)), .) %>%
-  mutate(
-    lci = plogis(fit + qnorm(0.025) * se.fit),
-    uci = plogis(fit + qnorm(0.975) * se.fit),
-    fit = plogis(fit)
-  ) %>%
-  select(test_time, lci, fit, uci)
-
-threshold <- prediction %>%
-  filter(fit > 1 - alpha) %>%
-  summarise(test_time = min(test_time))
-
-allmodels_plot <- ggplot() +
-  geom_ribbon(
-    data = prediction, aes(x = test_time, ymin = lci, ymax = uci),
-    alpha = 0.2
-  ) +
-  geom_line(data = prediction, aes(x = test_time, y = fit), linewidth = 1) +
-  geom_vline(
-    data = threshold, aes(xintercept = test_time),
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    data = threshold, aes(yintercept = 1 - alpha),
-    linetype = "dashed"
-  ) +
-  scale_y_continuous(limits = c(0, 1)) +
-  theme_bw() +
-  theme(legend.position = "none") +
-  labs(
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated All-model Accuracy"
-  )
-
-allmodels_plot
+```{r accuracy-portrait}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 12
+accuracy_plot +
+  facet_wrap2(~model, drop = FALSE, ncol = 6, nrow = 8, 
+             axes = "all", remove_labels = "all")
 ```
 
-# Variance
-
-```{r variance}
-#| fig-dpi: 300
-#| fig-width: 8
-#| fig-height: 4
-intermodel_variance <- predictions %>%
-  group_by(test_time) %>%
-  summarise(sd = sd(fit))
-
-variance_plot <- ggplot(data = intermodel_variance) +
-  geom_line(aes(x = test_time, y = sd), linewidth = 1) +
-  geom_vline(xintercept = intermodel_variance$test_time[which.max(
-    intermodel_variance$sd
-  )], linetype = "dashed") +
-  expand_limits(y = 0) +
-  theme_bw() +
-  labs(
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "S.D. of Estimated Per-model Accuracy Across Models"
-  )
-
-variance_plot
+```{r accuracy-landscape}
+#| fig-dpi: 600
+#| fig-width: 16
+#| fig-height: 8
+accuracy_plot +
+  facet_wrap2(~model, drop = FALSE, ncol = 8, nrow = 6, 
+             axes = "all", remove_labels = "all")
 ```
 
 # Errors, Warnings, etc.

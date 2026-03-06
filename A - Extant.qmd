@@ -26,6 +26,7 @@ library(dodo)
 library(tidyverse)
 library(future)
 library(furrr)
+library(ggh4x)
 
 `%notin%` <- Negate(`%in%`)
 ```
@@ -690,16 +691,6 @@ accuracy_plot <- ggplot() +
       summarise(accuracy = mean(!isextinct, na.rm = TRUE)),
     aes(x = test_time, y = accuracy)
   ) +
-  geom_line(
-    data = all_results %>%
-      group_by(model, test_time) %>%
-      summarise(na_prop = mean(is.na(isextinct))) %>%
-      group_by(model) %>%
-      filter(any(na_prop > 0)) %>%
-      ungroup(),
-    aes(x = test_time, y = na_prop),
-    colour = "#808080"
-  ) +
   geom_label(
     data = excluded,
     label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
@@ -709,17 +700,31 @@ accuracy_plot <- ggplot() +
   scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
   theme_classic() +
   theme(
-    axis.line = element_blank(), strip.background = element_blank(),
+    strip.background = element_blank(),
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
     x = "Test Time",
-    y = "Accuracy / NA Proportion",
-    title = "Did the model correctly infer persistence in all iterations?"
-  ) +
-  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
+    y = "Accuracy"
+  )
+```
 
-accuracy_plot
+```{r accuracy-portrait}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 12
+accuracy_plot +
+  facet_wrap2(~model, drop = FALSE, ncol = 6, nrow = 8, 
+             axes = "all", remove_labels = "all")
+```
+
+```{r accuracy-landscape}
+#| fig-dpi: 600
+#| fig-width: 16
+#| fig-height: 8
+accuracy_plot +
+  facet_wrap2(~model, drop = FALSE, ncol = 8, nrow = 6, 
+             axes = "all", remove_labels = "all")
 ```
 
 # Errors, Warnings, etc.
