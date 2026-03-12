@@ -1,5 +1,5 @@
 ---
-title: "Simulation A | Extant"
+title: "Scenario A | Extant"
 format: 
   html:
     toc: true
@@ -54,17 +54,18 @@ overwrite <- FALSE
 ```
 
 ```{r parameters}
+alpha <- 0.05
+
 eps <- 0.5
 p_i <- 0.7
 p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_time <- 100
-alpha <- 0.05
+extinction_time <- 100 # not strictly extinction - kept here for consistency!
 
-iterations <- 1:25
-test_times <- seq(50, extinction_time, by = 1)
+iterations <- 1:5000
+test_time <- extinction_time
 
 grid <- expand.grid(iteration = iterations)
 ```
@@ -72,33 +73,35 @@ grid <- expand.grid(iteration = iterations)
 Set up functions for records, surveys, and effort:
 
 ```{r functions}
-create_records <- function(extinction_time, pse, test_times) {
+create_records <- function(extinction_time, pse, test_time) {
   records <- rpois(extinction_time, pse)
   records <- rep(seq_along(records), records)
   records <- data.frame(time = records, p_ci_min = 1, p_ci = 1, p_ci_max = 1)
 
-  records <- map(test_times, ~ convert_dodo(records,
-    init.time = 1,
-    test.time = .x, threshold = 0.9, unique = FALSE,
-    aggregate = "max", time = "time", certainty = "p_ci",
-    certainty_lower = "p_ci_min", certainty_upper = "p_ci_max"
-  ))
+  records <- convert_dodo(records,
+    init.time = 1, test.time = test_time,
+    threshold = 0.9, unique = FALSE, aggregate = "max",
+    time = "time", certainty = "p_ci",
+    certainty_lower = "p_ci_min",
+    certainty_upper = "p_ci_max"
+  )
 
   return(records)
 }
 
 create_surveys <- function(test_time, eps, p_i, p_r) {
-  surveys <- map(test_times, ~ tibble(
-    time = 1:.x, survey = FALSE, epsilon = eps,
-    epsilon_lower = eps, epsilon_upper = eps, p_i = p_i, p_i_lower = p_i,
-    p_i_upper = p_i, p_r = p_r, p_r_lower = p_r, p_r_upper = p_r
-  ))
+  surveys <- tibble(
+    time = 1:test_time, survey = FALSE, epsilon = eps,
+    epsilon_lower = eps, epsilon_upper = eps, p_i = p_i,
+    p_i_lower = p_i, p_i_upper = p_i, p_r = p_r, p_r_lower = p_r,
+    p_r_upper = p_r
+  )
 
   return(surveys)
 }
 
 create_effort <- function(test_time, eps) {
-  effort <- map(test_times, ~ rep(eps, .x))
+  effort <- rep(eps, test_time)
 
   return(effort)
 }
@@ -360,9 +363,9 @@ rse_data <- grid %>%
   mutate(data = pmap(
     list(iteration),
     function(iteration) {
-      records <- create_records(extinction_time, pse, test_times)
-      surveys <- create_surveys(test_times, eps, p_i, p_r)
-      effort <- create_effort(test_times, eps)
+      records <- create_records(extinction_time, pse, test_time)
+      surveys <- create_surveys(test_time, eps, p_i, p_r)
+      effort <- create_effort(test_time, eps)
 
       return(list(records = records, surveys = surveys, effort = effort))
     }
@@ -375,11 +378,6 @@ saveRDS(rse_data, "Outputs/A/Extant/simulated_datasets.rds")
 Run models:
 
 ```{r run-models}
-run_grid <- expand.grid(
-  iteration = iterations,
-  test_time = test_times
-)
-
 if (file.exists("Outputs/A/Extant/model_times.rds")) {
   model_times <- readRDS("Outputs/A/Extant/model_times.rds")
 } else {
@@ -398,7 +396,7 @@ for (model in models) {
   valid_file <- FALSE
   if (file.exists(model_file)) {
     check <- readRDS(model_file)
-    if (!is.null(check$results) && nrow(check$results) == nrow(run_grid)) {
+    if (!is.null(check$results) && nrow(check$results) == nrow(grid)) {
       valid_file <- TRUE
     }
     rm(check)
@@ -407,14 +405,13 @@ for (model in models) {
   if (!valid_file || overwrite == TRUE) {
     model_ran <- TRUE
 
-    results <- future_map(seq_len(nrow(run_grid)), function(idx) {
-      iteration <- run_grid$iteration[idx]
-      test_time <- run_grid$test_time[idx]
+    results <- future_map(seq_len(nrow(grid)), function(idx) {
+      iteration <- grid$iteration[idx]
 
-      data_i <- rse_data$data[[iteration]]
-      records <- data_i$records[[match(test_time, test_times)]]
-      surveys <- data_i$surveys[[match(test_time, test_times)]]
-      effort <- data_i$effort[[match(test_time, test_times)]]
+      data_i <- rse_data$data[[idx]]
+      records <- data_i$records
+      surveys <- data_i$surveys
+      effort <- data_i$effort
 
       iteration_start <- Sys.time()
 
@@ -565,148 +562,112 @@ models <- readxl::read_xlsx("EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
 
-any_custom <- function(x) {
-  if (all(is.na(x))) {
-    return(NA)
-  } else {
-    return(any(x, na.rm = TRUE))
-  }
-}
-
 all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
 
-accuracy <- all_results %>%
-  group_by(model, iteration) %>%
-  summarise(
-    any_is_na = any(is.na(isextinct)),
-    any_wrong = any_custom(isextinct)
-  ) %>%
-  group_by(model, any_is_na, any_wrong) %>%
+results_summary <- all_results %>%
+  group_by(model, last_time, isextinct) %>%
   tally() %>%
-  ungroup() %>%
-  left_join(expand_grid(
-    any_is_na = c(TRUE, FALSE),
-    any_wrong = c(TRUE, NA, FALSE)
-  ), .) %>%
-  mutate(combined = paste(any_is_na, any_wrong, sep = " + ")) %>%
-  filter(combined != "FALSE + NA") %>%
-  mutate(
-    combined = factor(combined, levels = c(
-      "FALSE + FALSE", "TRUE + FALSE", "TRUE + NA", "TRUE + TRUE", "FALSE + TRUE"
-    )),
-    n = replace_na(n, 0)
-  ) %>%
-  select(-c(any_is_na, any_wrong))
+  group_by(model, last_time) %>%
+  mutate(prop = n / sum(n))
+
+predictions <- tibble(
+  model = character(),
+  test_time = integer(),
+  lci = numeric(),
+  fit = numeric(),
+  uci = numeric()
+)
+
+for (model_i in unique(all_results$model)) {
+  estimates <- all_results %>%
+    filter(model == model_i)
+
+  accuracy_model_i <- glm(
+    data = estimates,
+    formula = isextinct ~ last_time,
+    family = "binomial"
+  )
+
+  prediction_i <- predict(accuracy_model_i, newdata = data.frame(
+    last_time = 0:extinction_time
+  ), se.fit = TRUE) %>%
+    bind_cols(data.frame(last_time = 0:extinction_time), .) %>%
+    mutate(
+      lci = 1 - plogis(fit + qnorm(0.025) * se.fit),
+      uci = 1 - plogis(fit + qnorm(0.975) * se.fit),
+      fit = 1 - plogis(fit),
+      model = model_i
+    ) %>%
+    select(model, last_time, lci, fit, uci)
+
+  predictions <- bind_rows(predictions, prediction_i)
+}
+
+predictions <- predictions %>%
+  mutate(model = factor(model, levels = models))
+
+threshold <- predictions %>%
+  group_by(model) %>%
+  filter(fit > 1 - alpha) %>%
+  summarise(last_time = min(last_time))
+
+accuracy <- all_results %>%
+  group_by(model) %>%
+  summarise(accuracy = scales::percent(
+    1 - mean(isextinct, na.rm = TRUE),
+    accuracy = 0.1
+  )) %>%
+  mutate(model = factor(model, levels = models))
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
 accuracy_plot <- ggplot() +
-  geom_bar(
-    data = accuracy,
-    aes(x = model, y = n, fill = combined),
-    stat = "identity"
+  geom_ribbon(
+    data = predictions,
+    aes(x = last_time, ymin = lci, ymax = uci),
+    alpha = 0.2
   ) +
-  geom_label(
-    data = excluded,
-    aes(x = model, y = max(iterations) / 2, label = "Excluded"),
-    fontface = "italic",
-    angle = 90
-  ) +
-  scale_fill_manual(
-    values = c(
-      "FALSE + FALSE" = "#90EE90", "TRUE + FALSE" = "#49A749",
-      "TRUE + NA" = "#808080", "TRUE + TRUE" = "#DB5765",
-      "FALSE + TRUE" = "#F67280"
-    ),
-    labels = c(
-      "FALSE + FALSE" = "Always Extant (no NAs)",
-      "TRUE + FALSE" = "Always Extant (some NAs)",
-      "TRUE + NA" = "Unknown (all NAs)",
-      "TRUE + TRUE" = "Sometimes Extinct (some NAs)",
-      "FALSE + TRUE" = "Sometimes Extinct (no NAs)"
-    )
-  ) +
-  scale_x_discrete(drop = FALSE) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  theme_classic() +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(
-      angle = 90, vjust = 0.5, family = "mono",
-      face = "bold"
-    ),
-    axis.line = element_blank()
-  ) +
-  labs(
-    x = "Model",
-    y = "Iterations",
-    title = "Did the model correctly infer persistence at all time points?",
-    fill = ""
-  )
-
-accuracy_plot
-
-accuracy_plot <- ggplot() +
-  geom_tile(
-    data = all_results %>%
-      mutate(
-        isextinct = factor(isextinct),
-        isextinct = fct_na_value_to_level(isextinct, "NA")
-      ),
-    aes(x = test_time, y = iteration, fill = isextinct)
-  ) +
-  geom_label(
-    data = excluded,
-    label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
-    y = max(iterations) / 2, fontface = "italic"
-  ) +
-  scale_fill_manual(
-    values = c("TRUE" = "#F67280", "FALSE" = "#90EE90", "NA" = "#808080"),
-    labels = c("TRUE" = "Extinct", "FALSE" = "Extant", "NA" = "NA or Error")
-  ) +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  theme_classic() +
-  theme(
-    legend.position = "bottom", axis.line = element_blank(),
-    strip.background = element_blank(),
-    strip.text = element_text(family = "mono", face = "bold")
-  ) +
-  labs(
-    x = "Test Time",
-    y = "Iteration",
-    title = "Did the model correctly infer persistence?",
-    fill = ""
-  ) +
-  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
-
-accuracy_plot
-
-accuracy_plot <- ggplot() +
   geom_line(
-    data = all_results %>%
-      group_by(model, test_time) %>%
-      summarise(accuracy = mean(!isextinct, na.rm = TRUE)),
-    aes(x = test_time, y = accuracy)
+    data = predictions,
+    aes(x = last_time, y = fit),
+    linewidth = 1
+  ) +
+  geom_point(
+    data = results_summary,
+    aes(x = last_time, y = 1 - isextinct, size = prop)
+  ) +
+  geom_vline(
+    data = threshold,
+    aes(xintercept = last_time),
+    linetype = "dashed"
+  ) +
+  geom_hline(
+    data = threshold,
+    aes(yintercept = 1 - alpha),
+    linetype = "dashed"
   ) +
   geom_label(
     data = excluded,
-    label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
+    label = "Excluded", x = extinction_time / 2,
     y = 0.5, fontface = "italic"
   ) +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
+  geom_text(
+    data = accuracy,
+    aes(label = accuracy), x = 0, y = 1 - 2 * alpha,
+    hjust = 0, vjust = 1
+  ) +
+  scale_size_continuous(range = c(0, 1)) +
   theme_classic() +
   theme(
-    strip.background = element_blank(),
+    legend.position = "none", strip.background = element_blank(),
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    x = "Test Time",
-    y = "Accuracy"
-  )
+    x = paste0("Time of Last Sighting"),
+    y = "Estimated Accuracy"
+  ) 
 ```
 
 ```{r accuracy-portrait}

@@ -1,5 +1,5 @@
 ---
-title: "Simulation B | Extinct"
+title: "Scenario B | Extinct"
 format: 
   html:
     toc: true
@@ -63,8 +63,8 @@ p_r <- 0.5
 pse <- eps * p_i * p_r
 
 extinction_times <- seq(50, 250, by = 25)
-offsets <- seq(0, 100, by = 5)
-iterations <- 1:5
+offsets <- seq(0, 100, by = 1)
+iterations <- 1:10
 
 grid <- expand.grid(
   extinction_time = extinction_times,

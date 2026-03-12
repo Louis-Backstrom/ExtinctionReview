@@ -1,5 +1,5 @@
 ---
-title: "Simulation A | Extinct"
+title: "Scenario A | Extinct"
 format: 
   html:
     toc: true
@@ -55,6 +55,8 @@ overwrite <- FALSE
 ```
 
 ```{r parameters}
+alpha <- 0.05
+
 eps <- 0.5
 p_i <- 0.7
 p_r <- 0.5
@@ -62,9 +64,8 @@ p_r <- 0.5
 pse <- eps * p_i * p_r
 
 extinction_time <- 100
-alpha <- 0.05
 
-iterations <- 1:5
+iterations <- 1:10
 test_times <- seq(0, 100, by = 1) + extinction_time
 
 grid <- expand.grid(test_time = test_times, iteration = iterations)
@@ -646,7 +647,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated Per-model Accuracy"
+    y = "Estimated Accuracy"
   )
 ```
 
