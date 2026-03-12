@@ -689,7 +689,7 @@ accuracy_plot <- ggplot() +
   geom_line(
     data = all_results %>%
       group_by(model, test_time) %>%
-      summarise(accuracy = mean(!isextinct, na.rm = TRUE)),
+      summarise(accuracy = mean(isextinct, na.rm = TRUE)),
     aes(x = test_time, y = accuracy)
   ) +
   geom_label(
@@ -697,8 +697,6 @@ accuracy_plot <- ggplot() +
     label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
     y = 0.5, fontface = "italic"
   ) +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -706,7 +704,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = "Test Time",
-    y = "Observed Accuracy"
+    y = "Observed Type I Error Rate"
   )
 ```
 

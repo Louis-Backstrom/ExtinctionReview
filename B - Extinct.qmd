@@ -55,6 +55,7 @@ overwrite <- FALSE
 
 ```{r parameters}
 alpha <- 0.05
+beta <- 0.2
 
 eps <- 0.5
 p_i <- 0.7
@@ -562,30 +563,28 @@ for (i in 1:nrow(accuracy_results)) {
 
   model <- glm(data = data, formula = isextinct ~ offset, family = "binomial")
 
-  coefs <- coef(model)
+  threshold <- (qlogis(1 - beta) - model$coefficients[1]) / 
+    model$coefficients[2]
+  
+  if (threshold > 1e9) {
+    threshold <- 0
+  }
 
-  beta0 <- coefs[1]
-  beta1 <- coefs[2]
-
-  threshold <- 1 - alpha
-
-  offset_star <- (qlogis(threshold) - beta0) / beta1
-
-  accuracy_results$offset_star[i] <- offset_star
+  accuracy_results$threshold[i] <- threshold
 }
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
 accuracy_plot <- ggplot(accuracy_results) +
-  geom_line(aes(x = extinction_time, y = offset_star)) +
+  geom_line(aes(x = extinction_time, y = threshold)) +
   geom_label(
     data = excluded,
     label = "Excluded",
     x = (min(extinction_times) + max(extinction_times)) / 2,
-    y = 125, fontface = "italic"
+    y = 75, fontface = "italic"
   ) +
-  scale_y_continuous(limits = c(0, 250)) +
+  scale_y_continuous(limits = c(0, 150)) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -593,7 +592,8 @@ accuracy_plot <- ggplot(accuracy_results) +
   ) +
   labs(
     x = paste0("Extinction Time"),
-    y = "Estimated Offset Required for >95% Accuracy"
+    y = paste0("Estimated Test Time Offset Required for > ", 
+               (1 - beta) * 100, "% Power")
   ) 
 ```
 
