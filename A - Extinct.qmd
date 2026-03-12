@@ -56,6 +56,7 @@ overwrite <- FALSE
 
 ```{r parameters}
 alpha <- 0.05
+beta <- 0.2
 
 eps <- 0.5
 p_i <- 0.7
@@ -573,6 +574,11 @@ predictions <- tibble(
   uci = numeric()
 )
 
+thresholds <- tibble(
+  model = models,
+  threshold = rep(NA_real_, length(models))
+)
+
 for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
     filter(model == model_i)
@@ -596,15 +602,24 @@ for (model_i in unique(all_results$model)) {
     select(model, test_time, lci, fit, uci)
 
   predictions <- bind_rows(predictions, prediction_i)
+  
+  threshold <- (qlogis(1 - beta) - accuracy_model_i$coefficients[1]) / 
+    accuracy_model_i$coefficients[2]
+  
+  if (threshold < extinction_time) {
+    threshold <- extinction_time
+  }
+  
+  thresholds[thresholds$model == model_i, ]$threshold <- threshold
 }
+
+thresholds <- thresholds %>% 
+  mutate(model = factor(model, levels = models))
+
+saveRDS(thresholds, "Outputs/A/Extinct/thresholds.rds")
 
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
-
-threshold <- predictions %>%
-  group_by(model) %>%
-  filter(fit > 1 - alpha) %>%
-  summarise(test_time = min(test_time))
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
@@ -625,13 +640,13 @@ accuracy_plot <- ggplot() +
     aes(x = test_time, y = isextinct, size = prop)
   ) +
   geom_vline(
-    data = threshold,
-    aes(xintercept = test_time),
+    data = thresholds,
+    aes(xintercept = threshold),
     linetype = "dashed"
   ) +
   geom_hline(
-    data = threshold,
-    aes(yintercept = 1 - alpha),
+    data = thresholds,
+    aes(yintercept = 1 - beta),
     linetype = "dashed"
   ) +
   geom_label(
@@ -639,6 +654,7 @@ accuracy_plot <- ggplot() +
     label = "Excluded", x = (max(test_times) + extinction_time) / 2,
     y = 0.5, fontface = "italic"
   ) +
+  scale_x_continuous(limits = c(extinction_time, 2 * extinction_time)) +
   scale_size_continuous(range = c(0, 1)) +
   theme_classic() +
   theme(
@@ -647,7 +663,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated Accuracy"
+    y = "Estimated Power"
   )
 ```
 

@@ -579,6 +579,11 @@ predictions <- tibble(
   uci = numeric()
 )
 
+thresholds <- tibble(
+  model = models,
+  threshold = rep(NA_real_, length(models))
+)
+
 for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
     filter(model == model_i)
@@ -594,31 +599,45 @@ for (model_i in unique(all_results$model)) {
   ), se.fit = TRUE) %>%
     bind_cols(data.frame(last_time = 0:extinction_time), .) %>%
     mutate(
-      lci = 1 - plogis(fit + qnorm(0.025) * se.fit),
-      uci = 1 - plogis(fit + qnorm(0.975) * se.fit),
-      fit = 1 - plogis(fit),
+      lci = plogis(fit + qnorm(0.025) * se.fit),
+      uci = plogis(fit + qnorm(0.975) * se.fit),
+      fit = plogis(fit),
       model = model_i
     ) %>%
     select(model, last_time, lci, fit, uci)
 
   predictions <- bind_rows(predictions, prediction_i)
+  
+  threshold <- (qlogis(alpha) - accuracy_model_i$coefficients[1]) / 
+    accuracy_model_i$coefficients[2]
+  
+  if (threshold > extinction_time) {
+    if (threshold > 1e9) {
+      threshold <- 0
+    } else {
+      threshold <- extinction_time
+    }
+  } else if (threshold < 0) {
+    threshold <- 0
+  }
+  
+  thresholds[thresholds$model == model_i, ]$threshold <- threshold
 }
+
+thresholds <- thresholds %>% 
+  mutate(model = factor(model, levels = models))
+
+saveRDS(thresholds, "Outputs/A/Extant/thresholds.rds")
 
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
 
-threshold <- predictions %>%
-  group_by(model) %>%
-  filter(fit > 1 - alpha) %>%
-  summarise(last_time = min(last_time))
-
-accuracy <- all_results %>%
-  group_by(model) %>%
-  summarise(accuracy = scales::percent(
-    1 - mean(isextinct, na.rm = TRUE),
-    accuracy = 0.1
-  )) %>%
+error_rates <- all_results %>%
+  group_by(model, .drop = FALSE) %>%
+  summarise(error_rate = mean(isextinct, na.rm = TRUE)) %>%
   mutate(model = factor(model, levels = models))
+
+saveRDS(error_rates, "Outputs/A/Extant/error_rates.rds")
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
@@ -636,28 +655,30 @@ accuracy_plot <- ggplot() +
   ) +
   geom_point(
     data = results_summary,
-    aes(x = last_time, y = 1 - isextinct, size = prop)
+    aes(x = last_time, y = isextinct, size = prop)
   ) +
   geom_vline(
-    data = threshold,
-    aes(xintercept = last_time),
+    data = thresholds,
+    aes(xintercept = threshold),
     linetype = "dashed"
   ) +
   geom_hline(
-    data = threshold,
-    aes(yintercept = 1 - alpha),
+    data = thresholds,
+    aes(yintercept = alpha),
     linetype = "dashed"
   ) +
   geom_label(
     data = excluded,
-    label = "Excluded", x = extinction_time / 2,
+    label = "Excluded", x = extinction_time * 0.75,
     y = 0.5, fontface = "italic"
   ) +
   geom_text(
-    data = accuracy,
-    aes(label = accuracy), x = 0, y = 1 - 2 * alpha,
-    hjust = 0, vjust = 1
+    data = error_rates,
+    aes(label = scales::percent(error_rate, accuracy = 0.1)), 
+    x = extinction_time * 0.5, y = 2 * alpha,
+    hjust = 0, vjust = 0
   ) +
+  scale_x_continuous(limits = c(extinction_time * 0.5, extinction_time)) +
   scale_size_continuous(range = c(0, 1)) +
   theme_classic() +
   theme(
@@ -666,7 +687,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Time of Last Sighting"),
-    y = "Estimated Accuracy"
+    y = "Estimated Type I Error Rate"
   ) 
 ```
 
