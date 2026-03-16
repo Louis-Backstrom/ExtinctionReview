@@ -17,6 +17,7 @@ Install `dodo` (if needed):
 
 ```{r install-dodo}
 remotes::install_github("Louis-Backstrom/dodo", quiet = TRUE)
+cat("Using dodo version", as.character(packageVersion("dodo")))
 ```
 
 Load libraries:
@@ -177,7 +178,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
     "SO12B1" = SO12B1(
-      records = records$ubin, init.time = 1, increment = 0.01,
+      records = records$ubin, init.time = 1, increment = 0.001,
       gamma = 1, record.check = "error"
     ),
     "TH13B1" = TH13B1(
@@ -221,8 +222,8 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       records = records$ubin, alpha = alpha, init.time = 1,
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
-    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.01),
-    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.01),
+    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.001),
+    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.001),
     "AL15B1" = AL15B1(records = records$cbin),
     "SO16B1" = SO16B1(
       records = records$cbin, init.time = NULL,
@@ -531,22 +532,13 @@ cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
 #| fig-width: 8
 #| fig-height: 4
 ggplot(model_times) +
-  geom_col(aes(x = factor(model, levels = models), y = run_time / 60)) +
+  geom_col(
+    aes(x = factor(model, levels = models), y = run_time / 60)
+  ) +
   labs(x = "Model", y = "Total Runtime (min)") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-ggplot(model_times) +
-  geom_bar(aes(x = "", y = run_time / 60, fill = factor(model, levels = models)),
-    stat = "identity", width = 1, colour = "black"
-  ) +
-  coord_polar("y", start = 0) +
-  labs(fill = "Model") +
-  theme_void() +
-  theme(legend.position = "right", legend.title.align = 0.5) +
-  guides(fill = guide_legend(
-    title.position = "top", ncol = 3, keywidth = 0.5,
-    keyheight = 0.5
+  theme(axis.text.x = element_text(
+    angle = 90, vjust = 0.5, hjust = 1, family = "mono", face = "bold"
   ))
 ```
 
@@ -602,18 +594,18 @@ for (model_i in unique(all_results$model)) {
     select(model, test_time, lci, fit, uci)
 
   predictions <- bind_rows(predictions, prediction_i)
-  
-  threshold <- (qlogis(1 - beta) - accuracy_model_i$coefficients[1]) / 
+
+  threshold <- (qlogis(1 - beta) - accuracy_model_i$coefficients[1]) /
     accuracy_model_i$coefficients[2]
-  
+
   if (threshold < extinction_time) {
     threshold <- extinction_time
   }
-  
+
   thresholds[thresholds$model == model_i, ]$threshold <- threshold
 }
 
-thresholds <- thresholds %>% 
+thresholds <- thresholds %>%
   mutate(model = factor(model, levels = models))
 
 saveRDS(thresholds, "Outputs/A/Extinct/thresholds.rds")
@@ -672,8 +664,10 @@ accuracy_plot <- ggplot() +
 #| fig-width: 9
 #| fig-height: 12
 accuracy_plot +
-  facet_wrap2(~model, drop = FALSE, ncol = 6, nrow = 8, 
-             axes = "all", remove_labels = "all")
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 6, nrow = 8,
+    axes = "all", remove_labels = "all"
+  )
 ```
 
 ```{r accuracy-landscape}
@@ -681,8 +675,10 @@ accuracy_plot +
 #| fig-width: 16
 #| fig-height: 8
 accuracy_plot +
-  facet_wrap2(~model, drop = FALSE, ncol = 8, nrow = 6, 
-             axes = "all", remove_labels = "all")
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 8, nrow = 6,
+    axes = "all", remove_labels = "all"
+  )
 ```
 
 # Errors, Warnings, etc.

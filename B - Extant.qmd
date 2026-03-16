@@ -17,6 +17,7 @@ Install `dodo` (if needed):
 
 ```{r install-dodo}
 remotes::install_github("Louis-Backstrom/dodo", quiet = TRUE)
+cat("Using dodo version", as.character(packageVersion("dodo")))
 ```
 
 Load libraries:
@@ -62,7 +63,7 @@ p_r <- 0.5
 
 pse <- eps * p_i * p_r
 
-extinction_time <- 100 # not strictly extinction - kept here for consistency!
+extinction_time <- 250 # not strictly extinction - kept here for consistency!
 
 iterations <- 1:100
 test_times <- seq(50, extinction_time, by = 1)
@@ -173,7 +174,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
     "SO12B1" = SO12B1(
-      records = records$ubin, init.time = 1, increment = 0.01,
+      records = records$ubin, init.time = 1, increment = 0.001,
       gamma = 1, record.check = "error"
     ),
     "TH13B1" = TH13B1(
@@ -217,8 +218,8 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       records = records$ubin, alpha = alpha, init.time = 1,
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
-    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.01),
-    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.01),
+    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.001),
+    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.001),
     "AL15B1" = AL15B1(records = records$cbin),
     "SO16B1" = SO16B1(
       records = records$cbin, init.time = NULL,
@@ -537,174 +538,51 @@ cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
 #| fig-width: 8
 #| fig-height: 4
 ggplot(model_times) +
-  geom_col(aes(x = factor(model, levels = models), y = run_time / 60)) +
+  geom_col(
+    aes(x = factor(model, levels = models), y = run_time / 60)
+  ) +
   labs(x = "Model", y = "Total Runtime (min)") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-ggplot(model_times) +
-  geom_bar(aes(x = "", y = run_time / 60, fill = factor(model, levels = models)),
-    stat = "identity", width = 1, colour = "black"
-  ) +
-  coord_polar("y", start = 0) +
-  labs(fill = "Model") +
-  theme_void() +
-  theme(legend.position = "right", legend.title.align = 0.5) +
-  guides(fill = guide_legend(
-    title.position = "top", ncol = 3, keywidth = 0.5,
-    keyheight = 0.5
+  theme(axis.text.x = element_text(
+    angle = 90, vjust = 0.5, hjust = 1, family = "mono", face = "bold"
   ))
 ```
 
 # Accuracy
 
 ```{r accuracy}
-#| fig-dpi: 600
-#| fig-width: 16
-#| fig-height: 8
 models <- readxl::read_xlsx("EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
 
-any_custom <- function(x) {
-  if (all(is.na(x))) {
-    return(NA)
-  } else {
-    return(any(x, na.rm = TRUE))
-  }
-}
-
-all_results <- all_results %>%
-  mutate(model = factor(model, levels = models))
-
-accuracy <- all_results %>%
+accuracy_results <- all_results %>%
   group_by(model, iteration) %>%
-  summarise(
-    any_is_na = any(is.na(isextinct)),
-    any_wrong = any_custom(isextinct)
-  ) %>%
-  group_by(model, any_is_na, any_wrong) %>%
-  tally() %>%
-  ungroup() %>%
-  left_join(expand_grid(
-    any_is_na = c(TRUE, FALSE),
-    any_wrong = c(TRUE, NA, FALSE)
-  ), .) %>%
-  mutate(combined = paste(any_is_na, any_wrong, sep = " + ")) %>%
-  filter(combined != "FALSE + NA") %>%
-  mutate(
-    combined = factor(combined, levels = c(
-      "FALSE + FALSE", "TRUE + FALSE", "TRUE + NA", "TRUE + TRUE", "FALSE + TRUE"
-    )),
-    n = replace_na(n, 0)
-  ) %>%
-  select(-c(any_is_na, any_wrong))
+  arrange(test_time) %>%
+  mutate(cum_error = cummax(replace_na(isextinct, 0))) %>%
+  group_by(model, test_time) %>%
+  summarise(cum_error_rate = mean(cum_error)) %>% 
+  mutate(model = factor(model, levels = models))
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
-accuracy_plot <- ggplot() +
-  geom_bar(
-    data = accuracy,
-    aes(x = model, y = n, fill = combined),
-    stat = "identity"
-  ) +
-  geom_label(
-    data = excluded,
-    aes(x = model, y = max(iterations) / 2, label = "Excluded"),
-    fontface = "italic",
-    angle = 90
-  ) +
-  scale_fill_manual(
-    values = c(
-      "FALSE + FALSE" = "#90EE90", "TRUE + FALSE" = "#49A749",
-      "TRUE + NA" = "#808080", "TRUE + TRUE" = "#DB5765",
-      "FALSE + TRUE" = "#F67280"
-    ),
-    labels = c(
-      "FALSE + FALSE" = "Always Extant (no NAs)",
-      "TRUE + FALSE" = "Always Extant (some NAs)",
-      "TRUE + NA" = "Unknown (all NAs)",
-      "TRUE + TRUE" = "Sometimes Extinct (some NAs)",
-      "FALSE + TRUE" = "Sometimes Extinct (no NAs)"
-    )
-  ) +
-  scale_x_discrete(drop = FALSE) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  theme_classic() +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(
-      angle = 90, vjust = 0.5, family = "mono",
-      face = "bold"
-    ),
-    axis.line = element_blank()
-  ) +
-  labs(
-    x = "Model",
-    y = "Iterations",
-    title = "Did the model correctly infer persistence at all time points?",
-    fill = ""
-  )
-
-accuracy_plot
-
-accuracy_plot <- ggplot() +
-  geom_tile(
-    data = all_results %>%
-      mutate(
-        isextinct = factor(isextinct),
-        isextinct = fct_na_value_to_level(isextinct, "NA")
-      ),
-    aes(x = test_time, y = iteration, fill = isextinct)
-  ) +
-  geom_label(
-    data = excluded,
-    label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
-    y = max(iterations) / 2, fontface = "italic"
-  ) +
-  scale_fill_manual(
-    values = c("TRUE" = "#F67280", "FALSE" = "#90EE90", "NA" = "#808080"),
-    labels = c("TRUE" = "Extinct", "FALSE" = "Extant", "NA" = "NA or Error")
-  ) +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  theme_classic() +
-  theme(
-    legend.position = "bottom", axis.line = element_blank(),
-    strip.background = element_blank(),
-    strip.text = element_text(family = "mono", face = "bold")
-  ) +
-  labs(
-    x = "Test Time",
-    y = "Iteration",
-    title = "Did the model correctly infer persistence?",
-    fill = ""
-  ) +
-  facet_wrap(~model, drop = FALSE, ncol = 8, nrow = 6, axes = "all")
-
-accuracy_plot
-
-accuracy_plot <- ggplot() +
+accuracy_plot <- ggplot(accuracy_results) +
   geom_line(
-    data = all_results %>%
-      group_by(model, test_time) %>%
-      summarise(accuracy = mean(isextinct, na.rm = TRUE)),
-    aes(x = test_time, y = accuracy)
+    aes(x = test_time, y = cum_error_rate)
   ) +
   geom_label(
     data = excluded,
-    label = "Excluded", x = (max(test_times) + min(test_times)) / 2,
+    label = "Excluded", x = (min(test_times) + max(test_times)) / 2,
     y = 0.5, fontface = "italic"
   ) +
   theme_classic() +
   theme(
-    strip.background = element_blank(),
+    legend.position = "none", strip.background = element_blank(),
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    x = "Test Time",
-    y = "Observed Type I Error Rate"
+    x = paste0("Duration of Sighting Record"),
+    y = "Observed Cumulative Type I Error Rate"
   )
 ```
 
@@ -713,8 +591,10 @@ accuracy_plot <- ggplot() +
 #| fig-width: 9
 #| fig-height: 12
 accuracy_plot +
-  facet_wrap2(~model, drop = FALSE, ncol = 6, nrow = 8, 
-             axes = "all", remove_labels = "all")
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 6, nrow = 8,
+    axes = "all", remove_labels = "all"
+  )
 ```
 
 ```{r accuracy-landscape}
@@ -722,8 +602,10 @@ accuracy_plot +
 #| fig-width: 16
 #| fig-height: 8
 accuracy_plot +
-  facet_wrap2(~model, drop = FALSE, ncol = 8, nrow = 6, 
-             axes = "all", remove_labels = "all")
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 8, nrow = 6,
+    axes = "all", remove_labels = "all"
+  )
 ```
 
 # Errors, Warnings, etc.
