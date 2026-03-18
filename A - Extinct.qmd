@@ -15,8 +15,11 @@ lightbox: true
 
 Install `dodo` (if needed):
 
-```{r install-dodo}
+```{r install-dodo, output=FALSE}
 renv::install("Louis-Backstrom/dodo")
+```
+
+```{r dodo-version}
 cat("Using dodo version", as.character(packageVersion("dodo")))
 ```
 
