@@ -561,15 +561,40 @@ models <- readxl::read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50"
 accuracy_results <- all_results %>%
   group_by(model, iteration) %>%
   arrange(test_time) %>%
-  mutate(cum_error = cummax(replace_na(isextinct, 0))) %>%
+  mutate(
+    inst_error = replace_na(isextinct, 0),
+    cum_error = cummax(inst_error),
+  ) %>%
   group_by(model, test_time) %>%
-  summarise(cum_error_rate = mean(cum_error)) %>% 
+  summarise(
+    inst_error_rate = mean(inst_error),
+    cum_error_rate = mean(cum_error)
+  ) %>%
   mutate(model = factor(model, levels = models))
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
-accuracy_plot <- ggplot(accuracy_results) +
+inst_accuracy_plot <- ggplot(accuracy_results) +
+  geom_line(
+    aes(x = test_time, y = inst_error_rate)
+  ) +
+  geom_label(
+    data = excluded,
+    label = "Excluded", x = (min(test_times) + max(test_times)) / 2,
+    y = 0.5, fontface = "italic"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "none", strip.background = element_blank(),
+    strip.text = element_text(family = "mono", face = "bold")
+  ) +
+  labs(
+    x = paste0("Duration of Sighting Record"),
+    y = "Observed Instantaneous Type I Error Rate"
+  )
+
+cum_accuracy_plot <- ggplot(accuracy_results) +
   geom_line(
     aes(x = test_time, y = cum_error_rate)
   ) +
@@ -593,7 +618,13 @@ accuracy_plot <- ggplot(accuracy_results) +
 #| fig-dpi: 600
 #| fig-width: 9
 #| fig-height: 12
-accuracy_plot +
+inst_accuracy_plot +
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 6, nrow = 8,
+    axes = "all", remove_labels = "all"
+  )
+
+cum_accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 6, nrow = 8,
     axes = "all", remove_labels = "all"
@@ -604,7 +635,13 @@ accuracy_plot +
 #| fig-dpi: 600
 #| fig-width: 16
 #| fig-height: 8
-accuracy_plot +
+inst_accuracy_plot +
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 8, nrow = 6,
+    axes = "all", remove_labels = "all"
+  )
+
+cum_accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
