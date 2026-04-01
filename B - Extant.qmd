@@ -78,8 +78,12 @@ Set up functions for records, surveys, and effort:
 
 ```{r functions}
 create_records <- function(extinction_time, pse, test_times) {
-  records <- rpois(extinction_time, pse)
-  records <- rep(seq_along(records), records)
+  repeat {
+    counts <- rpois(length(pse), pse)
+    if (any(counts[1:test_time] > 0)) break
+  }
+
+  records <- rep(seq_along(counts), counts)
   records <- data.frame(time = records, p_ci_min = 1, p_ci = 1, p_ci_max = 1)
 
   records <- map(test_times, ~ convert_dodo(records,
