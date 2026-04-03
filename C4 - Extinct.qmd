@@ -81,10 +81,12 @@ epss <- eps_start + (eps_end - eps_start) * plogis(
   seq(-eps_rate, eps_rate, length.out = 2 * extinction_time)
 )
 
-pirs <- c(pir_end + (pir_start - pir_end) * (
-  exp(-pir_rate * 1:extinction_time) - exp(-pir_rate * extinction_time)) / 
-    (1 - exp(-pir_rate * extinction_time)), 
-  rep(pir_end, extinction_time))
+pirs <- c(
+  pir_end + (pir_start - pir_end) * (
+    exp(-pir_rate * 1:extinction_time) - exp(-pir_rate * extinction_time)) /
+    (1 - exp(-pir_rate * extinction_time)),
+  rep(pir_end, extinction_time)
+)
 
 pse <- epss * pirs
 
@@ -101,28 +103,33 @@ Plot parameters:
 #| fig-width: 9
 #| fig-height: 12
 eps_plot <- ggplot() +
-  geom_line(aes(x = seq_along(epss), y = epss), 
-            colour = "purple", linewidth = 1) +
+  geom_line(aes(x = seq_along(epss), y = epss),
+    colour = "purple", linewidth = 1
+  ) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "Epsilon (ε)") +
   theme_bw()
 
 pir_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pirs), y = pirs), 
-            colour = "turquoise", linewidth = 1) +
+  geom_line(aes(x = seq_along(pirs), y = pirs),
+    colour = "turquoise", linewidth = 1
+  ) +
   geom_line(aes(x = seq_along(pirs), y = p_i),
-            colour = "blue", linewidth = 1, linetype = "dotted") +
+    colour = "blue", linewidth = 1, linetype = "dotted"
+  ) +
   geom_line(aes(x = seq_along(pirs), y = p_r),
-            colour = "green", linewidth = 1, linetype = "dotted") +
+    colour = "green", linewidth = 1, linetype = "dotted"
+  ) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "p(i) × p(r)") +
   theme_bw()
 
 pse_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pse), y = pse), 
-            colour = "black", linewidth = 1) +
+  geom_line(aes(x = seq_along(pse), y = pse),
+    colour = "black", linewidth = 1
+  ) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "Sighting Rate") +
@@ -158,7 +165,7 @@ create_surveys <- function(test_time, epss, p_i, p_r) {
   surveys <- tibble(
     time = 1:test_time, survey = FALSE, epsilon = epss[1:test_time],
     epsilon_lower = epss[1:test_time], epsilon_upper = epss[1:test_time],
-    p_i = p_i, p_i_lower = p_i, p_i_upper = p_i, 
+    p_i = p_i, p_i_lower = p_i, p_i_upper = p_i,
     p_r = p_r, p_r_lower = p_r, p_r_upper = p_r
   )
 
@@ -651,7 +658,7 @@ for (model_i in unique(all_results$model)) {
     predictions <- bind_rows(predictions, prediction_i)
 
     thresholds[thresholds$model == model_i, ]$threshold <- NA
-    
+
     excluded <- bind_rows(excluded, tibble(model = model_i))
 
     next
@@ -687,13 +694,21 @@ for (model_i in unique(all_results$model)) {
   thresholds[thresholds$model == model_i, ]$threshold <- threshold
 }
 
-excluded <- excluded %>% 
+excluded <- excluded %>%
   mutate(model = factor(model, levels = models))
 
 thresholds <- thresholds %>%
   mutate(model = factor(model, levels = models))
 
 saveRDS(thresholds, "Outputs/C4/Extinct/thresholds.rds")
+
+initials <- predictions %>%
+  filter(test_time == extinction_time) %>%
+  select(model, power = fit) %>%
+  left_join(tibble(model = models), ., by = "model") %>%
+  mutate(model = factor(model, levels = models))
+
+saveRDS(initials, "Outputs/C4/Extinct/initials.rds")
 
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
@@ -769,10 +784,12 @@ accuracy_plot +
 all_results %>%
   filter(is.na(warning_msg) == FALSE) %>%
   group_by(model, warning_msg) %>%
-  tally()
+  tally() %>%
+  print(n = Inf)
 
 all_results %>%
   filter(is.na(error_msg) == FALSE) %>%
   group_by(model, error_msg) %>%
-  tally()
+  tally() %>%
+  print(n = Inf)
 ```

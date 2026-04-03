@@ -30,11 +30,11 @@ error_rates <- readRDS("Outputs/A/Extant/error_rates.rds")
 ```
 
 Specify "ideal" values for thresholds and error rates:
+
 ```{r ideal-values}
 ideal_threshold <- c(100, 125)
 ideal_errorrate <- c(0, 0.1)
 ```
-
 
 # Comparison
 
@@ -45,9 +45,13 @@ ideal_errorrate <- c(0, 0.1)
 scenario_a <- left_join(thresholds, error_rates, by = "model")
 
 comparison_plot <- ggplot(scenario_a) +
-  geom_rect(aes(xmin = ideal_threshold[1], xmax = ideal_threshold[2], 
-                ymin = ideal_errorrate[1], ymax = ideal_errorrate[2]),
-            fill = "palegreen", colour = NA) +
+  geom_rect(
+    aes(
+      xmin = ideal_threshold[1], xmax = ideal_threshold[2],
+      ymin = ideal_errorrate[1], ymax = ideal_errorrate[2]
+    ),
+    fill = "palegreen", colour = NA
+  ) +
   geom_point(aes(x = threshold, y = error_rate)) +
   scale_x_continuous(limits = c(100, 250)) +
   scale_y_continuous(limits = c(0, 1)) +
@@ -55,13 +59,13 @@ comparison_plot <- ggplot(scenario_a) +
   labs(
     x = paste0("Required Test Time to Achieve > 80% Power (Extinct)"),
     y = "Estimated Type I Error Rate (Extant)"
-  ) 
+  )
 
 comparison_plot
 
-best_models <- scenario_a %>% 
-    filter(threshold < 125, error_rate < 0.1) %>% 
-    pull(model)
+best_models <- scenario_a %>%
+  filter(threshold < 125, error_rate < 0.1) %>%
+  pull(model)
 
 best_models <- paste0("- ", best_models, collapse = "\n")
 
@@ -72,4 +76,3 @@ header <- paste0(
 
 asis_output(paste0(header, "\n\n```text\n", best_models, "\n```"))
 ```
-

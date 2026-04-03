@@ -1,0 +1,105 @@
+---
+title: "Scenario A | Comparison"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+editor: visual
+execute: 
+  warning: false
+lightbox: true  
+---
+
+# Setup
+
+Load libraries:
+
+```{r load-libraries}
+library(tidyverse)
+library(ggpubr)
+
+`%notin%` <- Negate(`%in%`)
+```
+
+Load in results from Extinct and Extant simulations:
+
+```{r load-results}
+C1_initials <- readRDS("Outputs/C1/Extinct/initials.rds")
+C2_initials <- readRDS("Outputs/C2/Extinct/initials.rds")
+C3_initials <- readRDS("Outputs/C3/Extinct/initials.rds")
+C4_initials <- readRDS("Outputs/C4/Extinct/initials.rds")
+
+C1_thresholds <- readRDS("Outputs/C1/Extinct/thresholds.rds")
+C2_thresholds <- readRDS("Outputs/C2/Extinct/thresholds.rds")
+C3_thresholds <- readRDS("Outputs/C3/Extinct/thresholds.rds")
+C4_thresholds <- readRDS("Outputs/C4/Extinct/thresholds.rds")
+```
+
+# Extinct Comparison
+
+Compare C1 with C2, C3, and C4:
+
+```{r extinct-comparison}
+C12_initials <- left_join(C1_initials, C2_initials, by = "model") %>% 
+  mutate(power_difference = power.y - power.x)
+C13_initials <- left_join(C1_initials, C3_initials, by = "model") %>% 
+  mutate(power_difference = power.y - power.x)
+C14_initials <- left_join(C1_initials, C4_initials, by = "model") %>% 
+  mutate(power_difference = power.y - power.x)
+
+C12_thresholds <- left_join(C1_thresholds, C2_thresholds, by = "model") %>% 
+  mutate(threshold_difference = threshold.y - threshold.x)
+C13_thresholds <- left_join(C1_thresholds, C3_thresholds, by = "model") %>% 
+  mutate(threshold_difference = threshold.y - threshold.x)
+C14_thresholds <- left_join(C1_thresholds, C4_thresholds, by = "model") %>% 
+  mutate(threshold_difference = threshold.y - threshold.x)
+
+C12_comparison <- left_join(C12_initials, C12_thresholds, by = "model")
+C13_comparison <- left_join(C13_initials, C13_thresholds, by = "model")
+C14_comparison <- left_join(C14_initials, C14_thresholds, by = "model")
+
+C12_plot <- ggplot(C12_comparison) +
+  geom_point(aes(x = power_difference, y = threshold_difference)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  expand_limits(y = -100) +
+  labs(x = "Difference in Initial Power (at Time of Extinction)",
+       y = "Difference in Time to Achieve 80% Power",
+       subtitle = "C1 (Null) vs C2 (Declining Detectability)") +
+  theme_classic()
+
+C13_plot <- ggplot(C13_comparison) +
+  geom_point(aes(x = power_difference, y = threshold_difference)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  # expand_limits(y = -100) +
+  labs(x = "Difference in Initial Power (at Time of Extinction)",
+       y = "Difference in Time to Achieve 80% Power",
+       subtitle = "C1 (Null) vs C3 (Increasing Survey Effort)") +
+  theme_classic()
+
+C14_plot <- ggplot(C14_comparison) +
+  geom_point(aes(x = power_difference, y = threshold_difference)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  expand_limits(y = -100) +
+  labs(x = "Difference in Initial Power (at Time of Extinction)",
+       y = "Difference in Time to Achieve 80% Power",
+       subtitle = "C1 (Null) vs C4 (Combined)") +
+  theme_classic()
+```
+
+```{r extinct-portrait}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 16
+ggarrange(C12_plot, C13_plot, C14_plot, nrow = 3)
+```
+
+```{r extinct-landscape}
+#| fig-dpi: 600
+#| fig-width: 16
+#| fig-height: 8
+ggarrange(C12_plot, C13_plot, C14_plot, ncol = 3)
+```
