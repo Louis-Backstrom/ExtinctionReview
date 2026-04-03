@@ -79,8 +79,8 @@ Set up functions for records, surveys, and effort:
 ```{r functions}
 create_records <- function(extinction_time, pse, test_times) {
   repeat {
-    counts <- rpois(length(pse), pse)
-    if (any(counts[1:test_time] > 0)) break
+    counts <- rpois(extinction_time, pse)
+    if (any(counts[1:min(test_times)] > 0)) break
   }
 
   records <- rep(seq_along(counts), counts)

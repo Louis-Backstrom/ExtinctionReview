@@ -32,6 +32,7 @@ library(future)
 library(furrr)
 library(scales)
 library(ggh4x)
+library(ggpubr)
 
 `%notin%` <- Negate(`%in%`)
 ```
@@ -64,31 +65,70 @@ beta <- 0.2
 
 extinction_time <- 100
 
-eps_start <- 0.5
+eps <- 0.5 # from A/B
+p_i <- 0.7 # from A/B
+p_r <- 0.5 # from A/B
+
+eps_start <- eps
 eps_end <- 0.9
 eps_rate <- 5
 
-pir_start <- 0.35
-# pir_end <- 0.175
+pir_start <- p_i * p_r
+pir_end <- 0
 pir_rate <- 0.04
 
-eps <- eps_start + (eps_end - eps_start) * plogis(
+epss <- eps_start + (eps_end - eps_start) * plogis(
   seq(-eps_rate, eps_rate, length.out = 2 * extinction_time)
 )
 
-pir <- c(
-  pir_start * (exp(-pir_rate * 1:extinction_time) - exp(
-    -pir_rate * extinction_time
-  )) / (1 - exp(-pir_rate * extinction_time)),
-  rep(0, extinction_time)
-)
+pirs <- c(pir_end + (pir_start - pir_end) * (
+  exp(-pir_rate * 1:extinction_time) - exp(-pir_rate * extinction_time)) / 
+    (1 - exp(-pir_rate * extinction_time)), 
+  rep(pir_end, extinction_time))
 
-pse <- eps * pir
+pse <- epss * pirs
 
 iterations <- 1:10
 test_times <- seq(extinction_time, length(pse), by = 1)
 
 grid <- expand.grid(test_time = test_times, iteration = iterations)
+```
+
+Plot parameters:
+
+```{r parameters-plot}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 12
+eps_plot <- ggplot() +
+  geom_line(aes(x = seq_along(epss), y = epss), 
+            colour = "purple", linewidth = 1) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "Epsilon (ε)") +
+  theme_bw()
+
+pir_plot <- ggplot() +
+  geom_line(aes(x = seq_along(pirs), y = pirs), 
+            colour = "turquoise", linewidth = 1) +
+  geom_line(aes(x = seq_along(pirs), y = p_i),
+            colour = "blue", linewidth = 1, linetype = "dotted") +
+  geom_line(aes(x = seq_along(pirs), y = p_r),
+            colour = "green", linewidth = 1, linetype = "dotted") +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "p(i) × p(r)") +
+  theme_bw()
+
+pse_plot <- ggplot() +
+  geom_line(aes(x = seq_along(pse), y = pse), 
+            colour = "black", linewidth = 1) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "Sighting Rate") +
+  theme_bw()
+
+ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
 ```
 
 Set up functions for records, surveys, and effort:
@@ -114,20 +154,19 @@ create_records <- function(extinction_time, pse, test_time) {
   return(records)
 }
 
-create_surveys <- function(test_time, eps, p_i, p_r) {
+create_surveys <- function(test_time, epss, p_i, p_r) {
   surveys <- tibble(
-    time = 1:test_time, survey = FALSE, epsilon = eps[1:test_time],
-    epsilon_lower = eps[1:test_time], epsilon_upper = eps[1:test_time],
-    p_i = sqrt(pir)[1:test_time], p_i_lower = sqrt(pir)[1:test_time],
-    p_i_upper = sqrt(pir)[1:test_time], p_r = sqrt(pir)[1:test_time],
-    p_r_lower = sqrt(pir)[1:test_time], p_r_upper = sqrt(pir)[1:test_time]
+    time = 1:test_time, survey = FALSE, epsilon = epss[1:test_time],
+    epsilon_lower = epss[1:test_time], epsilon_upper = epss[1:test_time],
+    p_i = p_i, p_i_lower = p_i, p_i_upper = p_i, 
+    p_r = p_r, p_r_lower = p_r, p_r_upper = p_r
   )
 
   return(surveys)
 }
 
-create_effort <- function(test_time, eps) {
-  effort <- eps[1:test_time]
+create_effort <- function(test_time, epss) {
+  effort <- epss[1:test_time]
 
   return(effort)
 }
@@ -390,8 +429,8 @@ rse_data <- grid %>%
     list(test_time, iteration),
     function(test_time, iteration) {
       records <- create_records(extinction_time, pse, test_time)
-      surveys <- create_surveys(test_time, eps, p_i, p_r)
-      effort <- create_effort(test_time, eps)
+      surveys <- create_surveys(test_time, epss, p_i, p_r)
+      effort <- create_effort(test_time, epss)
 
       return(list(records = records, surveys = surveys, effort = effort))
     }
