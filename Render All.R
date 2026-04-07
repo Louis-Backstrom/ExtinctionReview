@@ -1,11 +1,18 @@
 library(quarto)
+library(styler)
+
+style_file(list.files(pattern = ".qmd"))
+
 
 quarto_render("A - Extinct.qmd")
 quarto_render("A - Extant.qmd")
 quarto_render("A - Comparison.qmd")
 
+
 quarto_render("B - Extinct.qmd")
 quarto_render("B - Extant.qmd")
+quarto_render("B - Comparison.qmd")
+
 
 quarto_render("C1 - Extinct.qmd")
 quarto_render("C2 - Extinct.qmd")

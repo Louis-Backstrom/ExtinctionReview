@@ -96,8 +96,8 @@ Plot parameters:
 
 ```{r parameters-plot}
 #| fig-dpi: 600
-#| fig-width: 9
-#| fig-height: 12
+#| fig-width: 12
+#| fig-height: 4
 eps_plot <- ggplot() +
   geom_line(aes(x = seq_along(epss), y = epss),
     colour = "purple", linewidth = 1
@@ -633,6 +633,12 @@ predictions <- tibble(
 
 excluded <- tibble(model = "AL14B2")
 
+error_rates <- tibble(
+  model = character(),
+  mean_error_rate = numeric(),
+  slope = numeric()
+)
+
 for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
     filter(model == model_i)
@@ -646,16 +652,24 @@ for (model_i in unique(all_results$model)) {
       uci = NA
     )
 
+    error_rate_i <- tibble(
+      model = model_i,
+      mean_error_rate = NA,
+      slope = NA
+    )
+
     predictions <- bind_rows(predictions, prediction_i)
+
+    error_rates <- bind_rows(error_rates, error_rate_i)
 
     excluded <- bind_rows(excluded, tibble(model = model_i))
 
     next
   }
 
-  accuracy_model_i <- gam(
+  accuracy_model_i <- glm(
     data = estimates,
-    formula = isextinct ~ s(test_time),
+    formula = isextinct ~ test_time,
     family = "binomial"
   )
 
@@ -671,7 +685,15 @@ for (model_i in unique(all_results$model)) {
     ) %>%
     select(model, test_time, lci, fit, uci)
 
+  error_rate_i <- tibble(
+    model = model_i,
+    mean_error_rate = mean(prediction_i$fit),
+    slope = accuracy_model_i$coefficients["test_time"]
+  )
+
   predictions <- bind_rows(predictions, prediction_i)
+
+  error_rates <- bind_rows(error_rates, error_rate_i)
 }
 
 excluded <- excluded %>%
@@ -679,6 +701,11 @@ excluded <- excluded %>%
 
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
+
+error_rates <- error_rates %>%
+  mutate(model = factor(model, levels = models))
+
+saveRDS(error_rates, "Outputs/C3/Extant/error_rates.rds")
 
 accuracy_plot <- ggplot() +
   geom_ribbon(

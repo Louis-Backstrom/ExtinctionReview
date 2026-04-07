@@ -95,8 +95,8 @@ Plot parameters:
 
 ```{r parameters-plot}
 #| fig-dpi: 600
-#| fig-width: 9
-#| fig-height: 12
+#| fig-width: 12
+#| fig-height: 4
 eps_plot <- ggplot() +
   geom_line(aes(x = seq_along(epss), y = epss),
     colour = "purple", linewidth = 1

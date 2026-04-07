@@ -565,12 +565,17 @@ for (i in 1:nrow(accuracy_results)) {
   threshold <- (qlogis(1 - beta) - model$coefficients[1]) /
     model$coefficients[2]
 
-  if (threshold > 1e9) {
+  if (threshold > 1e9 | threshold < 0) {
     threshold <- 0
   }
 
   accuracy_results$threshold[i] <- threshold
 }
+
+accuracy_results <- accuracy_results %>%
+  mutate(model = factor(model, levels = models))
+
+saveRDS(accuracy_results, "Outputs/B/Extinct/accuracy_results.rds")
 
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
@@ -594,7 +599,7 @@ accuracy_plot <- ggplot(accuracy_results) +
   labs(
     x = paste0("Extinction Time"),
     y = paste0(
-      "Estimated Test Time Offset Required for > ",
+      "Estimated Time Offset Required for > ",
       (1 - beta) * 100, "% Power"
     )
   )

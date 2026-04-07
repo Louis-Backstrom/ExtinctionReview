@@ -620,6 +620,8 @@ saveRDS(thresholds, "Outputs/A/Extinct/thresholds.rds")
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
 
+saveRDS(predictions, "Outputs/A/Extinct/predictions.rds")
+
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 

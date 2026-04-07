@@ -631,6 +631,8 @@ saveRDS(thresholds, "Outputs/A/Extant/thresholds.rds")
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
 
+saveRDS(predictions, "Outputs/A/Extant/predictions.rds")
+
 error_rates <- all_results %>%
   group_by(model, .drop = FALSE) %>%
   summarise(error_rate = mean(isextinct, na.rm = TRUE)) %>%
@@ -685,7 +687,7 @@ accuracy_plot <- ggplot() +
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    x = paste0("Time of Last Sighting"),
+    x = paste0("Time of Last Sighting (Test Time at ", test_time, ")"),
     y = "Estimated Type I Error Rate"
   )
 ```
