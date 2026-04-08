@@ -41,7 +41,6 @@ beta <- 0.2
 #| fig-dpi: 600
 #| fig-width: 12
 #| fig-height: 4
-
 extinct_plot <- ggplot() +
   geom_line(
     data = extinct_results,
