@@ -2930,7 +2930,7 @@ font-family: inherit;
 <span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>  estimates <span class="ot">&lt;-</span> all_results <span class="sc">%&gt;%</span></span>
 <span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(model <span class="sc">==</span> model_i)</span>
 <span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">mean</span>(<span class="fu">is.na</span>(estimates<span class="sc">$</span>isextinct)) <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">mean</span>(<span class="fu">is.na</span>(estimates<span class="sc">$</span>isextinct)) <span class="sc">&gt;=</span> <span class="fl">0.5</span>) {</span>
 <span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    prediction_i <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_i,</span>
 <span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">test_time =</span> <span class="fu">min</span>(test_times)<span class="sc">:</span><span class="fu">max</span>(test_times),</span>

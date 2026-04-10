@@ -648,7 +648,7 @@ for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
     filter(model == model_i)
 
-  if (mean(is.na(estimates$isextinct)) == 1) {
+  if (mean(is.na(estimates$isextinct)) >= 0.5) {
     prediction_i <- data.frame(
       model = model_i,
       test_time = min(test_times):max(test_times),

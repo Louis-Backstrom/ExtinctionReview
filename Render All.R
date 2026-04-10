@@ -25,3 +25,7 @@ quarto_render("C3 - Extant.qmd")
 quarto_render("C4 - Extant.qmd")
 
 quarto_render("C - Comparison.qmd")
+
+
+quarto_render("D1 - Extinct.qmd")
+quarto_render("D2 - Extinct.qmd")
