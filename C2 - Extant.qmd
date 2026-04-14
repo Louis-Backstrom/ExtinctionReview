@@ -62,7 +62,6 @@ overwrite <- FALSE
 
 ```{r parameters}
 alpha <- 0.05
-beta <- 0.2
 
 extinction_time <- 100 # not strictly extinction - kept here for consistency!
 
