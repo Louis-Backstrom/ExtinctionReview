@@ -28,18 +28,17 @@ Load libraries:
 ```{r load-libraries}
 library(dodo)
 library(tidyverse)
+library(readxl)
 library(future)
 library(furrr)
 library(scales)
 library(ggh4x)
-
-`%notin%` <- Negate(`%in%`)
 ```
 
 Get models:
 
 ```{r get-models}
-models <- readxl::read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   filter(`R?` == "✓") %>%
   pull(ID)
@@ -552,7 +551,7 @@ ggplot(model_times) +
 # Accuracy
 
 ```{r accuracy}
-models <- readxl::read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
 

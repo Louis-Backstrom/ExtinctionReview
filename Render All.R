@@ -31,3 +31,8 @@ quarto_render("D1 - Extinct.qmd")
 quarto_render("D2 - Extinct.qmd")
 quarto_render("D3 - Extinct.qmd")
 quarto_render("D4 - Extinct.qmd")
+
+quarto_render("D1 - Extant.qmd")
+# quarto_render("D2 - Extant.qmd")
+quarto_render("D3 - Extant.qmd")
+# quarto_render("D4 - Extant.qmd")

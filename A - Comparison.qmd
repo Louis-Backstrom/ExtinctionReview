@@ -19,8 +19,6 @@ Load libraries:
 library(tidyverse)
 library(ggpubr)
 library(knitr)
-
-`%notin%` <- Negate(`%in%`)
 ```
 
 Load in results from Extinct and Extant simulations:

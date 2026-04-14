@@ -19,8 +19,6 @@ Load libraries:
 library(tidyverse)
 library(ggpubr)
 
-`%notin%` <- Negate(`%in%`)
-
 label_pretty <- function(x) {
   return(format(x, trim = TRUE, scientific = FALSE, drop0trailing = TRUE))
 }
