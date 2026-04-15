@@ -679,10 +679,10 @@ for (model_i in unique(all_results$model)) {
   predictions <- bind_rows(predictions, prediction_i)
 
   threshold <- (qlogis(1 - beta) - accuracy_model_i$coefficients[1]) /
-    accuracy_model_i$coefficients[2]
+    accuracy_model_i$coefficients[2] - extinction_time
 
-  if (threshold < extinction_time) {
-    threshold <- extinction_time
+  if (threshold < 0) {
+    threshold <- 0
   }
 
   thresholds[thresholds$model == model_i, ]$threshold <- threshold
