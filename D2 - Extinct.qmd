@@ -33,7 +33,6 @@ library(future)
 library(furrr)
 library(scales)
 library(ggh4x)
-library(ggpubr)
 ```
 
 Get models:
@@ -62,300 +61,150 @@ overwrite <- FALSE
 alpha <- 0.05
 beta <- 0.2
 
+eps <- 0.5
+p_i <- 0.7
+p_r <- 0.5
+
+pse <- eps * p_i * p_r
+
+certainty_classes <- tibble(
+  class = c("X", "Y"),
+  beta_1 = c(25, 2),
+  beta_2 = c(1, 3),
+  certain = c(TRUE, FALSE)
+)
+
+certainty_threshold <- 0.9
+
 extinction_time <- 100
 
-eps <- 0.5 # from A/B
-p_i <- 0.7 # from A/B
-p_r <- 0.5 # from A/B
-
-eps_start <- eps
-eps_end <- eps
-eps_rate <- 5
-
-pir_start <- p_i * p_r
-# pir_end <- pir_start * 0.5
-# pir_rate <- 0.04
-
-epss <- eps_start + (eps_end - eps_start) * plogis(
-  seq(-eps_rate, eps_rate, length.out = 2 * extinction_time)
-)
-
-pirs <- c(rep(pir_start, 2 * extinction_time))
-
-pse <- epss * pirs
-
-classes <- tibble(
-  class = c("A", "B", "C", "D"),
-  weight = c(0.25, 0.25, 0.25, 0.25),
-  beta_1 = c(50, 50, 20, 10),
-  beta_2 = c(1, 3, 10, 20),
-  certain = c(TRUE, TRUE, FALSE, FALSE)
-)
-
 iterations <- 1:10
-test_times <- seq(extinction_time, length(pse), by = 1)
+test_times <- seq(0, 100, by = 1) + extinction_time
 
 grid <- expand.grid(test_time = test_times, iteration = iterations)
-```
-
-Plot parameters:
-
-```{r parameters-plot}
-#| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 4
-eps_plot <- ggplot() +
-  geom_line(aes(x = seq_along(epss), y = epss),
-    colour = "purple", linewidth = 1
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Epsilon (ε)") +
-  theme_bw()
-
-pir_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pirs), y = pirs),
-    colour = "turquoise", linewidth = 1
-  ) +
-  geom_line(aes(x = seq_along(pirs), y = p_i),
-    colour = "blue", linewidth = 1, linetype = "dotted"
-  ) +
-  geom_line(aes(x = seq_along(pirs), y = p_r),
-    colour = "green", linewidth = 1, linetype = "dotted"
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "p(i) × p(r)") +
-  theme_bw()
-
-pse_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pse), y = pse),
-    colour = "black", linewidth = 1
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Sighting Rate") +
-  theme_bw()
-
-ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
 ```
 
 Set up functions for records, surveys, and effort:
 
 ```{r functions}
-simulate_class_records <- function(record_class, test_time, extinction_time, pse) {
-  counts <- rpois(test_time, pse[1:test_time] * record_class$weight)
-
-  out <- tibble(
-    time = rep(seq_len(test_time), counts)
-  )
-
-  if (nrow(out) == 0) {
-    return(tibble(
-      time = integer(),
-      certainty = numeric(),
-      class = character(),
-      certain = logical(),
-      correct = logical()
-    ))
-  }
-
-  out <- out %>%
-    mutate(
-      certainty = rbeta(
-        n = n(),
-        shape1 = record_class$beta_1,
-        shape2 = record_class$beta_2
-      ),
-      class = record_class$class,
-      certain = record_class$certain,
-      correct = runif(n()) < certainty
-    ) %>%
-    filter(!(time > extinction_time & correct))
-
-  return(out)
+rtruncbeta <- function(n, shape1, shape2, min = 0, max = 1) {
+  u <- runif(n, pbeta(min, shape1, shape2), pbeta(max, shape1, shape2))
+  return(qbeta(u, shape1, shape2))
 }
 
-build_dodo_records <- function(records, test_time, classes) {
-  init_time <- 1
+create_records <- function(extinction_time, pse, test_time) {
+  repeat {
+    for (i in seq_len(nrow(certainty_classes))) {
+      beta_pars <- c(certainty_classes$beta_1[i], certainty_classes$beta_2[i])
 
-  certain_classes <- classes %>%
-    filter(certain) %>%
-    pull(class)
+      if (certainty_classes$certain[i] == TRUE) {
+        counts <- rpois(extinction_time, pse)
+      } else {
+        counts <- rpois(test_time, pse)
+      }
 
-  uncertain_classes <- classes %>%
-    filter(!certain) %>%
-    pull(class)
+      records <- rep(seq_along(counts), counts)
 
-  dodo_records <- list()
+      if (length(records) == 0) {
+        records <- data.frame(
+          time = numeric(0), p_ci_min = numeric(0), p_ci = numeric(0),
+          p_ci_max = numeric(0), class = character(0)
+        )
+      } else {
+        if (certainty_classes$certain[i] == TRUE) {
+          scores <- rtruncbeta(
+            n = length(records),
+            shape1 = beta_pars[1],
+            shape2 = beta_pars[2],
+            min = certainty_threshold,
+            max = 1
+          )
+        } else {
+          scores <- rtruncbeta(
+            n = length(records),
+            shape1 = beta_pars[1],
+            shape2 = beta_pars[2],
+            min = 0,
+            max = certainty_threshold
+          )
+        }
 
-  dodo_records$init.time <- init_time
-  dodo_records$test.time <- test_time
-  dodo_records$threshold <- NA
-  dodo_records$unique <- NA
+        records <- data.frame(
+          time = records, p_ci_min = scores, p_ci = scores,
+          p_ci_max = scores, class = certainty_classes$class[i]
+        )
+      }
 
-  dodo_records$ccon <- records %>%
-    filter(class %in% certain_classes) %>%
-    pull(time) %>%
-    sort()
+      if (i == 1) {
+        all_records <- records
+      } else {
+        all_records <- rbind(all_records, records)
+      }
+    }
 
-  dodo_records$cbin <- as.integer(
-    init_time:test_time %in% dodo_records$ccon
-  )
+    all_records <- sort_by(all_records, ~time)
 
-  dodo_records$cdis <- factor(
-    dodo_records$ccon,
-    levels = init_time:test_time
-  ) %>%
-    table() %>%
-    as.integer()
-
-  dodo_records$ucon <- records %>%
-    select(time, certainty) %>%
-    arrange(time) %>%
-    as.data.frame()
-
-  dodo_records$ubin <- data.frame(
-    certain = as.integer(
-      init_time:test_time %in%
-        (records %>%
-          filter(class %in% certain_classes) %>%
-          pull(time) %>%
-          sort())
-    ),
-    uncertain = as.integer(
-      init_time:test_time %in%
-        (records %>%
-          filter(class %in% uncertain_classes) %>%
-          pull(time) %>%
-          sort())
+    dodo_records <- convert_dodo(all_records,
+      init.time = 1, test.time = test_time,
+      threshold = certainty_threshold, unique = FALSE, aggregate = "max",
+      time = "time", certainty = "p_ci",
+      certainty_lower = "p_ci_min",
+      certainty_upper = "p_ci_max"
     )
-  )
 
-  umcb_list <- map(classes$class, function(class_i) {
-    as.integer(
-      init_time:test_time %in%
-        (records %>%
-          filter(class == class_i) %>%
-          pull(time) %>%
-          sort())
-    )
-  })
+    umcb <- data.frame(time = 1:test_time)
 
-  names(umcb_list) <- paste0("records_", classes$class)
+    for (class_i in certainty_classes$class) {
+      counts <- table(factor(
+        all_records$time[all_records$class == class_i],
+        levels = 1:test_time
+      ))
 
-  dodo_records$umcb <- tibble(
-    time = init_time:test_time,
-    !!!umcb_list
-  ) %>%
-    as.data.frame()
+      umcb[[paste0("records_", class_i)]] <- as.integer(counts > 0)
+    }
 
-  dodo_records$iucn <- records %>%
-    group_by(time) %>%
-    arrange(desc(certainty), .by_group = TRUE) %>%
-    slice(1) %>%
-    ungroup() %>%
-    mutate(
-      record = TRUE,
-      certainty_lower = certainty,
-      certainty_upper = certainty
-    ) %>%
-    right_join(
-      tibble(time = init_time:test_time),
-      by = "time"
-    ) %>%
-    select(time, record, certainty, certainty_lower, certainty_upper) %>%
-    mutate(
-      record = replace_na(record, FALSE),
-      certainty = replace_na(certainty, 0),
-      certainty_lower = replace_na(certainty_lower, 0),
-      certainty_upper = replace_na(certainty_upper, 0)
-    ) %>%
-    as.data.frame()
+    dodo_records$umcb <- umcb
 
-  dodo_records$LE14B1 <- records %>%
-    select(time, class) %>%
-    left_join(
-      classes %>%
-        transmute(
-          class,
-          certainty = beta_1 / (beta_1 + beta_2)
+    lee1 <- dodo_records$iucn %>%
+      mutate(
+        certainty = if_else(
+          certainty > 0,
+          floor(certainty * 10) / 10 + 0.05,
+          certainty
         ),
-      by = "class"
-    ) %>%
-    arrange(time) %>%
-    group_by(time) %>%
-    arrange(desc(certainty), .by_group = TRUE) %>%
-    slice(1) %>%
-    ungroup() %>%
-    mutate(
-      record = TRUE,
-      certainty_lower = certainty,
-      certainty_upper = certainty
-    ) %>%
-    right_join(
-      tibble(time = init_time:test_time),
-      by = "time"
-    ) %>%
-    select(time, record, certainty, certainty_lower, certainty_upper) %>%
-    mutate(
-      record = replace_na(record, FALSE),
-      certainty = replace_na(certainty, 0),
-      certainty_lower = replace_na(certainty_lower, 0),
-      certainty_upper = replace_na(certainty_upper, 0)
-    ) %>%
-    as.data.frame()
+        certainty_lower = if_else(
+          certainty_lower > 0,
+          floor(certainty_lower * 10) / 10 + 0.00,
+          certainty_lower
+        ),
+        certainty_upper = if_else(
+          certainty_upper > 0,
+          floor(certainty_upper * 10) / 10 + 0.10,
+          certainty_upper
+        ),
+      )
+
+    dodo_records$lee1 <- lee1
+
+    if (length(dodo_records$ccon) > 0) break
+  }
 
   return(dodo_records)
 }
 
-create_records <- function(extinction_time, pse, test_time, classes) {
-  repeat {
-    records <- map_dfr(seq_len(nrow(classes)), function(i) {
-      simulate_class_records(
-        record_class = classes[i, ],
-        test_time = test_time,
-        extinction_time = extinction_time,
-        pse = pse
-      )
-    }) %>%
-      arrange(time, class)
-
-    dodo_records <- build_dodo_records(
-      records = records,
-      test_time = test_time,
-      classes = classes
-    )
-
-    if (nrow(records) > 0 && length(dodo_records$ccon) > 0) break
-  }
-
-  return(list(
-    raw = records,
-    dodo = dodo_records
-  ))
-}
-
-create_surveys <- function(test_time, epss, p_i, p_r) {
+create_surveys <- function(test_time, eps, p_i, p_r) {
   surveys <- tibble(
-    time = 1:test_time,
-    survey = FALSE,
-    epsilon = epss[1:test_time],
-    epsilon_lower = epss[1:test_time],
-    epsilon_upper = epss[1:test_time],
-    p_i = p_i,
-    p_i_lower = p_i,
-    p_i_upper = p_i,
-    p_r = p_r,
-    p_r_lower = p_r,
+    time = 1:test_time, survey = FALSE, epsilon = eps,
+    epsilon_lower = eps, epsilon_upper = eps, p_i = p_i,
+    p_i_lower = p_i, p_i_upper = p_i, p_r = p_r, p_r_lower = p_r,
     p_r_upper = p_r
   )
 
   return(surveys)
 }
 
-create_effort <- function(test_time, epss) {
-  effort <- epss[1:test_time]
+create_effort <- function(test_time, eps) {
+  effort <- rep(eps, test_time)
 
   return(effort)
 }
@@ -366,179 +215,172 @@ Set up functions for models:
 ```{r model-functions}
 run_model <- function(model, records, surveys, effort, alpha, test_time) {
   out <- switch(model,
-    "SL88F1" = SL88F1(records = records$dodo$ccon, alpha = alpha),
-    "SS89F1" = SS89F1(records = records$dodo$ccon, alpha = alpha),
+    "SL88F1" = SL88F1(records = records$ccon, alpha = alpha),
+    "SS89F1" = SS89F1(records = records$ccon, alpha = alpha),
     "SS89B1" = SS89B1(
-      records = records$dodo$ccon, alpha = alpha, length.out = 1e4,
+      records = records$ccon, alpha = alpha, length.out = 1e4,
       scale = 0.01
     ),
     "SO93F1" = SO93F1(
-      records = records$dodo$ccon, alpha = alpha, init.time = 1,
+      records = records$ccon, alpha = alpha, init.time = 1,
       test.time = test_time
     ),
     "SO93B1" = SO93B1(
-      records = records$dodo$ccon, init.time = 1,
+      records = records$ccon, init.time = 1,
       test.time = test_time, pi = 0.5
     ),
     "SO93F2" = SO93F2(
-      records = records$dodo$ccon, alpha = alpha, init.time = 1,
+      records = records$ccon, alpha = alpha, init.time = 1,
       test.time = test_time, precBits = 1024
     ),
-    "MA94F1" = MA94F1(records = records$dodo$ccon, alpha = alpha, gamma = 0.5),
-    "BU95F1" = BU95F1(records = records$dodo$cdis),
-    "BU95F2" = BU95F2(records = records$dodo$cdis),
-    "BU95F3" = BU95F3(records = records$dodo$cdis),
+    "MA94F1" = MA94F1(records = records$ccon, alpha = alpha, gamma = 0.5),
+    "BU95F1" = BU95F1(records = records$cdis),
+    "BU95F2" = BU95F2(records = records$cdis),
+    "BU95F3" = BU95F3(records = records$cdis),
     "MA97F1" = MA97F1(
-      records = records$dodo$cdis, effort = effort, alpha = alpha,
+      records = records$cdis, effort = effort, alpha = alpha,
       init.time = 1
     ),
-    "MC98F1" = MC98F1(records = records$dodo$cdis, effort = effort),
+    "MC98F1" = MC98F1(records = records$cdis, effort = effort),
     "MC99F1" = MC99F1(
-      records = records$dodo$ccon, alpha = alpha,
+      records = records$ccon, alpha = alpha,
       test.time = test_time
     ),
     "WM99B1" = WM99B1(
-      records = records$dodo$cbin, surveys = 1:test_time,
+      records = records$cbin, surveys = 1:test_time,
       alpha = alpha, test.time = test_time, priors = list(
         lambda = 1e3, c = 1, d = 1
       ), increment = 0.01
     ),
     "RS03F1" = RS03F1(
-      records = records$dodo$ccon, alpha = alpha,
+      records = records$ccon, alpha = alpha,
       conf.int = "one-sided", k = ifelse(length(
-        records$dodo$ccon
-      ) >= 10, 10, length(records$dodo$ccon)),
+        records$ccon
+      ) >= 10, 10, length(records$ccon)),
       test.time = test_time
     ),
     "SR03F1" = SR03F1(
-      records = records$dodo$ccon, alpha = alpha,
+      records = records$ccon, alpha = alpha,
       test.time = test_time
     ),
-    "MC06F1" = MC06F1(
-      records = records$dodo$cbin, alpha = alpha,
-      init.time = 1
-    ),
+    "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = 1),
     "RO09B1" = RO09B1(
-      records = records$dodo$cbin, pi = 0.5, n.chains = 1,
+      records = records$cbin, pi = 0.5, n.chains = 1,
       n.iter = 11e3, n.burnin = 1e3
     ),
     "JE10F1" = JE10F1(
-      records = records$dodo$ccon, alpha = alpha, init.time = 1,
+      records = records$ccon, alpha = alpha, init.time = 1,
       test.time = test_time
     ),
     "JE10F2" = JE10F2(
-      records = records$dodo$ccon, alpha = alpha, init.time = 1,
+      records = records$ccon, alpha = alpha, init.time = 1,
       test.time = test_time
     ),
-    "BR12F1" = BR12F1(records = records$dodo$ccon, alpha = alpha),
+    "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
     "SO12B1" = SO12B1(
-      records = records$dodo$ubin, init.time = 1, increment = 0.001,
+      records = records$ubin, init.time = 1, increment = 0.001,
       gamma = 1, record.check = "error"
     ),
     "TH13B1" = TH13B1(
-      records = records$dodo$umcb,
+      records = records$umcb,
       priors = list(
-        p = list(p1 = 0.5, p2 = 0.5, p3 = 0.5, p4 = 0.5),
-        q = list(q1 = 1.0, q2 = 1.0, q3 = 0.5, q4 = 0.5)
+        p = list(p1 = 0.5, p2 = 0.5),
+        q = list(q1 = 1.0, q2 = 0.5)
       ),
-      certain = c(1, 2), PXT = NULL, PE = NULL
+      certain = c(1), PXT = NULL, PE = NULL
     ),
     "TH13B2" = TH13B2(
-      records = records$dodo$umcb,
+      records = records$umcb,
       priors = list(
-        p = list(p1 = c(0, 1), p2 = c(0, 1), p3 = c(0, 1), p4 = c(0, 1)),
-        q = list(q1 = c(1, 1), q2 = c(1, 1), q3 = c(0, 1), q4 = c(0, 1))
+        p = list(p1 = c(0, 1), p2 = c(0, 1)),
+        q = list(q1 = c(1, 1), q2 = c(0, 1))
       ),
-      certain = c(1, 2), PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+      certain = c(1), PXT = NULL, PE = NULL,
+      n.iter = 10e3, pb = FALSE
     ),
     "TH13B3" = TH13B3(
-      records = records$dodo$umcb,
+      records = records$umcb,
       priors = list(
-        p = list(p1 = c(0, 1), p2 = c(0, 1), p3 = c(0, 1), p4 = c(0, 1)),
-        q = list(q1 = c(1, 1), q2 = c(1, 1), q3 = c(0, 1), q4 = c(0, 1))
+        p = list(p1 = c(0, 1), p2 = c(0, 1)),
+        q = list(q1 = c(1, 1), q2 = c(0, 1))
       ),
-      certain = c(1, 2), PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+      certain = c(1), PXT = NULL, PE = NULL,
+      n.iter = 10e3, pb = FALSE
     ),
-    "AL14B1" = AL14B1(records = records$dodo$cbin),
+    "AL14B1" = AL14B1(records = records$cbin),
     "CB14B1" = CB14B1(
-      records = records$dodo$cbin, alpha = alpha, init.time = 1,
+      records = records$cbin, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "CB14B2" = CB14B2(
-      records = records$dodo$cbin, alpha = alpha, init.time = 1,
+      records = records$cbin, alpha = alpha, init.time = 1,
       test.time = test_time, burn.in = 1e3, n.iter = 11e3
     ),
     "JR14F1" = JR14F1(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time
     ),
     "LE14B1" = LE14B1(
-      records = records$dodo$LE14B1, surveys = surveys,
-      threshold = 0.9, prior = c(0, 1), n.iter = 10e3
+      records = records$lee1, surveys = surveys,
+      threshold = certainty_threshold, prior = c(0, 1), n.iter = 10e3
     ),
     "LE14B2" = LE14B2(
-      records = records$dodo$ubin, alpha = alpha, init.time = 1,
+      records = records$ubin, alpha = alpha, init.time = 1,
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
-    "SB14B1" = SB14B1(
-      records = records$dodo$ubin, init.time = 1,
-      increment = 0.001
-    ),
-    "SB14B2" = SB14B2(
-      records = records$dodo$ubin, init.time = 1,
-      increment = 0.001
-    ),
-    "AL15B1" = AL15B1(records = records$dodo$cbin),
+    "SB14B1" = SB14B1(records = records$ubin, init.time = 1, increment = 0.001),
+    "SB14B2" = SB14B2(records = records$ubin, init.time = 1, increment = 0.001),
+    "AL15B1" = AL15B1(records = records$cbin),
     "SO16B1" = SO16B1(
-      records = records$dodo$cbin, init.time = NULL,
+      records = records$cbin, init.time = NULL,
       test.time = NULL, curr.time = NULL
     ),
     "SO16B2" = SO16B2(
-      records = records$dodo$cbin, init.time = NULL,
+      records = records$cbin, init.time = NULL,
       test.time = NULL, curr.time = NULL
     ),
     "WA16B1" = WA16B1(
-      records = records$dodo$ccon, alpha = alpha, init.time = 1,
+      records = records$ccon, alpha = alpha, init.time = 1,
       use.mpfr = FALSE, cores = 1, pb = FALSE
     ),
-    "TH17I1" = TH17I1(records = records$dodo$iucn, surveys = surveys),
+    "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
     "BR19F1" = BR19F1(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "BR19F2" = BR19F2(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "BR19F3" = BR19F3(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "BR19F4" = BR19F4(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "BR19F5" = BR19F5(
-      records = records$dodo$ucon, alpha = alpha, init.time = 1,
+      records = records$ucon, alpha = alpha, init.time = 1,
       test.time = test_time, n.iter = 10e3
     ),
     "TH19B1" = TH19B1(
-      records = records$dodo$iucn, surveys = surveys,
-      init.time = max(records$dodo$ccon) + 1, test.time = test_time,
+      records = records$iucn, surveys = surveys,
+      init.time = max(records$ccon) + 1, test.time = test_time,
       pi = 0.5
     ),
     "KO20B1" = KO20B1(
-      records = records$dodo$cbin, alpha = alpha, init.time = 1,
+      records = records$cbin, alpha = alpha, init.time = 1,
       test.time = test_time, n.chains = 1, n.iter = 11e3,
       n.burnin = 1e3, n.thin = 10
     ),
     "KO20B2" = KO20B2(
-      records = records$dodo$ubin, alpha = alpha, init.time = 1,
+      records = records$ubin, alpha = alpha, init.time = 1,
       test.time = test_time, n.chains = 1, n.iter = 11e3,
       n.burnin = 1e3, n.thin = 10
     ),
     "KO21B1" = KO21B1(
-      records = records$dodo$ubin, alpha = alpha, init.time = 1,
+      records = records$ubin, alpha = alpha, init.time = 1,
       test.time = test_time, n.chains = 1, n.iter = 11e3,
       n.burnin = 1e3, n.thin = 10
     ),
@@ -630,9 +472,9 @@ rse_data <- grid %>%
   mutate(data = pmap(
     list(test_time, iteration),
     function(test_time, iteration) {
-      records <- create_records(extinction_time, pse, test_time, classes)
-      surveys <- create_surveys(test_time, epss, p_i, p_r)
-      effort <- create_effort(test_time, epss)
+      records <- create_records(extinction_time, pse, test_time)
+      surveys <- create_surveys(test_time, eps, p_i, p_r)
+      effort <- create_effort(test_time, eps)
 
       return(list(records = records, surveys = surveys, effort = effort))
     }
@@ -897,16 +739,10 @@ thresholds <- thresholds %>%
 
 saveRDS(thresholds, "Outputs/D2/Extinct/thresholds.rds")
 
-initials <- predictions %>%
-  filter(test_time == extinction_time) %>%
-  select(model, power = fit) %>%
-  left_join(tibble(model = models), ., by = "model") %>%
-  mutate(model = factor(model, levels = models))
-
-saveRDS(initials, "Outputs/D2/Extinct/initials.rds")
-
 predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
+
+saveRDS(predictions, "Outputs/D2/Extinct/predictions.rds")
 
 accuracy_plot <- ggplot() +
   geom_ribbon(
