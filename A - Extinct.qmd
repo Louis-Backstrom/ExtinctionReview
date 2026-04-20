@@ -451,14 +451,12 @@ for (model in models) {
           model = model, iteration = iteration, test_time = test_time,
           isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
           error_msg = if (length(error_msg) > 0) {
-            tbl <- table(error_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(error_msg), collapse = " | ")
           } else {
             NA_character_
           }, run_time = i_time, end_time = Sys.time()
@@ -469,8 +467,7 @@ for (model in models) {
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },

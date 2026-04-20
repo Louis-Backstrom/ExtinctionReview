@@ -439,13 +439,14 @@ for (model in models) {
             warning = length(warning_msg) > 0,
             error = FALSE,
             warning_msg = if (length(warning_msg) > 0) {
-              tbl <- table(warning_msg)
-              paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+              paste(unique(warning_msg), collapse = " | ")
             } else {
               NA_character_
             },
             error_msg = NA_character_,
-            run_time = as.numeric(difftime(Sys.time(), iteration_start, units = "secs")),
+            run_time = as.numeric(difftime(Sys.time(), iteration_start,
+              units = "secs"
+            )),
             end_time = Sys.time()
           )
         },

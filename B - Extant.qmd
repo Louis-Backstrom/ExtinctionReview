@@ -455,14 +455,12 @@ for (model in models) {
           last_time = max(records$ccon), isextinct = NA,
           warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
           error_msg = if (length(error_msg) > 0) {
-            tbl <- table(error_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(error_msg), collapse = " | ")
           } else {
             NA_character_
           }, run_time = i_time, end_time = Sys.time()
@@ -475,8 +473,7 @@ for (model in models) {
           ),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
@@ -573,9 +570,6 @@ accuracy_results <- all_results %>%
     inst_error_rate = mean(inst_error),
     cum_error_rate = mean(cum_error)
   ) %>%
-  mutate(model = factor(model, levels = models))
-
-accuracy_results <- accuracy_results %>%
   mutate(model = factor(model, levels = models))
 
 saveRDS(accuracy_results, "Outputs/B/Extant/accuracy_results.rds")

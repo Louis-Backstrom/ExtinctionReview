@@ -77,7 +77,7 @@ pir_start <- p_i * p_r
 # pir_rate <- 0.04
 
 epss <- eps_start + (eps_end - eps_start) * plogis(
-  seq(-eps_rate, eps_rate, length.out = 2 * extinction_time)
+  seq(-eps_rate, 2 * eps_rate, length.out = 2 * extinction_time)
 )
 
 pirs <- rep(pir_start, 2 * extinction_time)
@@ -508,14 +508,12 @@ for (model in models) {
           model = model, iteration = iteration, test_time = test_time,
           isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
           error_msg = if (length(error_msg) > 0) {
-            tbl <- table(error_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(error_msg), collapse = " | ")
           } else {
             NA_character_
           }, run_time = i_time, end_time = Sys.time()
@@ -526,8 +524,7 @@ for (model in models) {
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },

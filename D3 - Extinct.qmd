@@ -40,7 +40,7 @@ Get models:
 ```{r get-models}
 models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
-  filter(`R?` == "✓") %>%
+  filter(`R?` == "✓", Uncertainty != "None") %>%
   pull(ID)
 ```
 
@@ -552,14 +552,12 @@ for (model in models) {
           model = model, iteration = iteration, test_time = test_time,
           isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
           error_msg = if (length(error_msg) > 0) {
-            tbl <- table(error_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(error_msg), collapse = " | ")
           } else {
             NA_character_
           }, run_time = i_time, end_time = Sys.time()
@@ -570,8 +568,7 @@ for (model in models) {
           isextinct = test_model(model, output, alpha, test_time),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
-            tbl <- table(warning_msg)
-            paste0(names(tbl), " (x", as.integer(tbl), ")", collapse = " | ")
+            paste(unique(warning_msg), collapse = " | ")
           } else {
             NA_character_
           },
@@ -654,6 +651,7 @@ ggplot(model_times) +
 ```{r accuracy}
 models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
+  filter(Uncertainty != "None") %>%
   pull(ID)
 
 all_results <- all_results %>%
@@ -678,7 +676,7 @@ thresholds <- tibble(
   threshold = rep(NA_real_, length(models))
 )
 
-excluded <- tibble(model = "AL14B2")
+excluded <- tibble(model = character(0))
 
 for (model_i in unique(all_results$model)) {
   estimates <- all_results %>%
@@ -794,7 +792,7 @@ accuracy_plot <- ggplot() +
 #| fig-height: 12
 accuracy_plot +
   facet_wrap2(~model,
-    drop = FALSE, ncol = 6, nrow = 8,
+    drop = FALSE, ncol = 3, nrow = 6,
     axes = "all", remove_labels = "all"
   )
 ```
@@ -805,7 +803,7 @@ accuracy_plot +
 #| fig-height: 8
 accuracy_plot +
   facet_wrap2(~model,
-    drop = FALSE, ncol = 8, nrow = 6,
+    drop = FALSE, ncol = 6, nrow = 3,
     axes = "all", remove_labels = "all"
   )
 ```
