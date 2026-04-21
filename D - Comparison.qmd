@@ -1,0 +1,135 @@
+---
+title: "Scenario D | Comparison"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+editor: visual
+execute: 
+  warning: false
+lightbox: true  
+---
+
+# Setup
+
+Load libraries:
+
+```{r load-libraries}
+library(tidyverse)
+library(ggpubr)
+```
+
+Load in results from Extinct and Extant simulations:
+
+```{r load-results}
+D1_initials <- readRDS("Outputs/D1/Extinct/initials.rds")
+D2_initials <- readRDS("Outputs/D2/Extinct/initials.rds")
+D3_initials <- readRDS("Outputs/D3/Extinct/initials.rds")
+D4_initials <- readRDS("Outputs/D4/Extinct/initials.rds")
+
+D1_thresholds <- readRDS("Outputs/D1/Extinct/thresholds.rds") %>%
+  mutate(threshold = if_else(threshold > 1e9, NA, threshold))
+D2_thresholds <- readRDS("Outputs/D2/Extinct/thresholds.rds") %>%
+  mutate(threshold = if_else(threshold > 1e9, NA, threshold))
+D3_thresholds <- readRDS("Outputs/D3/Extinct/thresholds.rds") %>%
+  mutate(threshold = if_else(threshold > 1e9, NA, threshold))
+D4_thresholds <- readRDS("Outputs/D4/Extinct/thresholds.rds") %>%
+  mutate(threshold = if_else(threshold > 1e9, NA, threshold))
+
+D1_extinct <- left_join(D1_initials, D1_thresholds, by = "model")
+D2_extinct <- left_join(D2_initials, D2_thresholds, by = "model")
+D3_extinct <- left_join(D3_initials, D3_thresholds, by = "model")
+D4_extinct <- left_join(D4_initials, D4_thresholds, by = "model")
+```
+
+# Extinct Comparison
+
+Compare D1 with D2, D3, and D4:
+
+```{r extinct-comparison}
+#| fig-dpi: 600
+#| fig-width: 12
+#| fig-height: 3
+
+D2_joined <- left_join(
+  D1_extinct,
+  D2_extinct,
+  by = "model",
+  suffix = c("_D1", "_D2")
+)
+
+D3_joined <- left_join(
+  D1_extinct,
+  D3_extinct,
+  by = "model",
+  suffix = c("_D1", "_D3")
+)
+
+D4_joined <- left_join(
+  D1_extinct,
+  D4_extinct,
+  by = "model",
+  suffix = c("_D1", "_D4")
+)
+
+threshold_range <- range(
+  D1_extinct$threshold,
+  D2_extinct$threshold,
+  D3_extinct$threshold,
+  D4_extinct$threshold,
+  na.rm = TRUE
+)
+
+D1_plot <- ggplot(D1_extinct) +
+  geom_point(aes(x = power, y = threshold)) +
+  labs(
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "D1 (Matched)"
+  ) +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
+
+D2_plot <- ggplot(D2_joined) +
+  geom_segment(aes(x = power_D1, y = threshold_D1, xend = power_D2, yend = threshold_D2), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_D1, y = threshold_D1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_D2, y = threshold_D2)) +
+  labs(
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "D2 (Uncertains Continue)"
+  ) +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
+
+D3_plot <- ggplot(D3_joined) +
+  geom_segment(aes(x = power_D1, y = threshold_D1, xend = power_D3, yend = threshold_D3), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_D1, y = threshold_D1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_D3, y = threshold_D3)) +
+  labs(
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "D3 (Inverted)"
+  ) +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
+
+D4_plot <- ggplot(D4_joined) +
+  geom_segment(aes(x = power_D1, y = threshold_D1, xend = power_D4, yend = threshold_D4), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_D1, y = threshold_D1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_D4, y = threshold_D4)) +
+  labs(
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "D4 (Uncertains Increase)"
+  ) +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
+
+ggarrange(D1_plot, D2_plot, D3_plot, D4_plot, ncol = 4)
+```
