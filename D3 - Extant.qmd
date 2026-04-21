@@ -76,7 +76,7 @@ certainty_threshold <- 0.9
 
 extinction_time <- 150 # not strictly extinction - kept here for consistency!
 
-iterations <- 1:10
+iterations <- 1:100
 test_times <- seq(50, extinction_time, by = 1)
 
 grid <- expand.grid(iteration = iterations)
