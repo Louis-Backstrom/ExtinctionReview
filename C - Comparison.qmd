@@ -18,17 +18,6 @@ Load libraries:
 ```{r load-libraries}
 library(tidyverse)
 library(ggpubr)
-library(scales)
-
-label_pretty <- function(x) {
-  return(format(x, trim = TRUE, scientific = FALSE, drop0trailing = TRUE))
-}
-
-log10_reverse <- trans_new(
-  "log10_reverse",
-  transform = function(x) -log10(x),
-  inverse   = function(x) 10^(-x)
-)
 ```
 
 Load in results from Extinct and Extant simulations:
@@ -44,10 +33,10 @@ C2_thresholds <- readRDS("Outputs/C2/Extinct/thresholds.rds")
 C3_thresholds <- readRDS("Outputs/C3/Extinct/thresholds.rds")
 C4_thresholds <- readRDS("Outputs/C4/Extinct/thresholds.rds")
 
-C1_errorrates <- readRDS("Outputs/C1/Extant/error_rates.rds")
-C2_errorrates <- readRDS("Outputs/C2/Extant/error_rates.rds")
-C3_errorrates <- readRDS("Outputs/C3/Extant/error_rates.rds")
-C4_errorrates <- readRDS("Outputs/C4/Extant/error_rates.rds")
+C1_extinct <- left_join(C1_initials, C1_thresholds, by = "model")
+C2_extinct <- left_join(C2_initials, C2_thresholds, by = "model")
+C3_extinct <- left_join(C3_initials, C3_thresholds, by = "model")
+C4_extinct <- left_join(C4_initials, C4_thresholds, by = "model")
 ```
 
 # Extinct Comparison
@@ -57,162 +46,87 @@ Compare C1 with C2, C3, and C4:
 ```{r extinct-comparison}
 #| fig-dpi: 600
 #| fig-width: 12
-#| fig-height: 4
-C12_initials <- left_join(C1_initials, C2_initials, by = "model") %>%
-  mutate(power_difference = power.y - power.x)
-C13_initials <- left_join(C1_initials, C3_initials, by = "model") %>%
-  mutate(power_difference = power.y - power.x)
-C14_initials <- left_join(C1_initials, C4_initials, by = "model") %>%
-  mutate(power_difference = power.y - power.x)
+#| fig-height: 3
 
-C12_thresholds <- left_join(C1_thresholds, C2_thresholds, by = "model") %>%
-  mutate(threshold_difference = threshold.y / threshold.x)
-C13_thresholds <- left_join(C1_thresholds, C3_thresholds, by = "model") %>%
-  mutate(threshold_difference = threshold.y / threshold.x)
-C14_thresholds <- left_join(C1_thresholds, C4_thresholds, by = "model") %>%
-  mutate(threshold_difference = threshold.y / threshold.x)
+C2_joined <- left_join(
+  C1_extinct,
+  C2_extinct,
+  by = "model",
+  suffix = c("_C1", "_C2")
+)
 
-C12_comparison <- left_join(C12_initials, C12_thresholds, by = "model")
-C13_comparison <- left_join(C13_initials, C13_thresholds, by = "model")
-C14_comparison <- left_join(C14_initials, C14_thresholds, by = "model")
+C3_joined <- left_join(
+  C1_extinct,
+  C3_extinct,
+  by = "model",
+  suffix = c("_C1", "_C3")
+)
 
-C12_extinct_plot <- ggplot(C12_comparison) +
-  geom_point(aes(x = power_difference, y = threshold_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 1, linetype = "dashed") +
+C4_joined <- left_join(
+  C1_extinct,
+  C4_extinct,
+  by = "model",
+  suffix = c("_C1", "_C4")
+)
+
+threshold_range <- range(
+  C1_extinct$threshold,
+  C2_extinct$threshold,
+  C3_extinct$threshold,
+  C4_extinct$threshold,
+  na.rm = TRUE
+)
+
+C1_plot <- ggplot(C1_extinct) +
+  geom_point(aes(x = power, y = threshold)) +
   labs(
-    x = "Absolute Difference in Power at Time of Extinction",
-    y = "Relative Difference in Time to Achieve 80% Power",
-    title = "C2 (Declining Detectability) vs C1 (Null)"
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "C1 (Null)"
   ) +
   theme_classic() +
-  scale_x_continuous(
-    limits = c(-1, 1)
-  ) +
-  scale_y_log10(
-    limits = c(1e-1, 1e1),
-    breaks = c(0.1, 0.2, 0.5, 1, 2, 5, 10),
-    labels = label_pretty,
-    trans = log10_reverse
-  )
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
 
-C13_extinct_plot <- ggplot(C13_comparison) +
-  geom_point(aes(x = power_difference, y = threshold_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 1, linetype = "dashed") +
+C2_plot <- ggplot(C2_joined) +
+  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C2, yend = threshold_C2), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_C2, y = threshold_C2)) +
   labs(
-    x = "Absolute Difference in Power at Time of Extinction",
-    y = "Relative Difference in Time to Achieve 80% Power",
-    title = "C3 (Increasing Survey Effort) vs C1 (Null)"
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "C2 (Declining Detectability)"
   ) +
   theme_classic() +
-  scale_x_continuous(
-    limits = c(-1, 1)
-  ) +
-  scale_y_log10(
-    limits = c(1e-1, 1e1),
-    breaks = c(0.1, 0.2, 0.5, 1, 2, 5, 10),
-    labels = label_pretty,
-    trans = log10_reverse
-  )
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
 
-C14_extinct_plot <- ggplot(C14_comparison) +
-  geom_point(aes(x = power_difference, y = threshold_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 1, linetype = "dashed") +
+C3_plot <- ggplot(C3_joined) +
+  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_C3, y = threshold_C3)) +
   labs(
-    x = "Absolute Difference in Power at Time of Extinction",
-    y = "Relative Difference in Time to Achieve 80% Power",
-    title = "C4 (Combined) vs C1 (Null)"
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "C3 (Increasing Survey Effort)"
   ) +
   theme_classic() +
-  scale_x_continuous(
-    limits = c(-1, 1)
-  ) +
-  scale_y_log10(
-    limits = c(1e-1, 1e1),
-    breaks = c(0.1, 0.2, 0.5, 1, 2, 5, 10),
-    labels = label_pretty,
-    log10_reverse
-  )
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
 
-ggarrange(C12_extinct_plot, C13_extinct_plot, C14_extinct_plot, ncol = 3)
+C4_plot <- ggplot(C4_joined) +
+  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C4, yend = threshold_C4), colour = "grey90", linewidth = 0.25) +
+  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
+  geom_point(aes(x = power_C4, y = threshold_C4)) +
+  labs(
+    x = "Initial Power at Extinction",
+    y = "Time to Achieve 80% Power",
+    title = "C4 (Combined)"
+  ) +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = threshold_range)
+
+ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
 ```
 
-# Extant Comparison
-
-Compare C1 with C2, C3, and C4:
-
-```{r extant-comparison}
-#| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 4
-C12_errorrates <- left_join(C1_errorrates, C2_errorrates, by = "model") %>%
-  mutate(
-    mean_difference = mean_error_rate.y - mean_error_rate.x,
-    slope_difference = slope.y - slope.x
-  )
-C13_errorrates <- left_join(C1_errorrates, C3_errorrates, by = "model") %>%
-  mutate(
-    mean_difference = mean_error_rate.y - mean_error_rate.x,
-    slope_difference = slope.y - slope.x
-  )
-C14_errorrates <- left_join(C1_errorrates, C4_errorrates, by = "model") %>%
-  mutate(
-    mean_difference = mean_error_rate.y - mean_error_rate.x,
-    slope_difference = slope.y - slope.x
-  )
-
-C12_extant_plot <- ggplot(C12_errorrates) +
-  geom_point(aes(x = mean_difference, y = slope_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    x = "Absolute Difference in Mean of Type I Error Rate",
-    y = "Absolute Difference in Slope of Type I Error Rate",
-    title = "C2 (Declining Detectability) vs C1 (Null)"
-  ) +
-  theme_classic() +
-  scale_x_continuous(
-    limits = c(-0.25, 0.25)
-  ) +
-  scale_y_continuous(
-    limits = c(-0.25, 0.25)
-  )
-
-C13_extant_plot <- ggplot(C13_errorrates) +
-  geom_point(aes(x = mean_difference, y = slope_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    x = "Absolute Difference in Mean of Type I Error Rate",
-    y = "Absolute Difference in Slope of Type I Error Rate",
-    title = "C3 (Increasing Survey Effort) vs C1 (Null)"
-  ) +
-  theme_classic() +
-  scale_x_continuous(
-    limits = c(-0.25, 0.25)
-  ) +
-  scale_y_continuous(
-    limits = c(-0.25, 0.25)
-  )
-
-C14_extant_plot <- ggplot(C14_errorrates) +
-  geom_point(aes(x = mean_difference, y = slope_difference)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    x = "Absolute Difference in Mean of Type I Error Rate",
-    y = "Absolute Difference in Slope of Type I Error Rate",
-    title = "C4 (Combined) vs C1 (Null)"
-  ) +
-  theme_classic() +
-  scale_x_continuous(
-    limits = c(-0.25, 0.25)
-  ) +
-  scale_y_continuous(
-    limits = c(-0.25, 0.25)
-  )
-
-ggarrange(C12_extant_plot, C13_extant_plot, C14_extant_plot, ncol = 3)
-```

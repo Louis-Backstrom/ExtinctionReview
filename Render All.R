@@ -23,12 +23,6 @@ render_safe("C1 - Extinct.qmd")
 render_safe("C2 - Extinct.qmd")
 render_safe("C3 - Extinct.qmd")
 render_safe("C4 - Extinct.qmd")
-
-render_safe("C1 - Extant.qmd")
-render_safe("C2 - Extant.qmd")
-render_safe("C3 - Extant.qmd")
-render_safe("C4 - Extant.qmd")
-
 render_safe("C - Comparison.qmd")
 
 
@@ -36,8 +30,3 @@ render_safe("D1 - Extinct.qmd")
 render_safe("D2 - Extinct.qmd")
 render_safe("D3 - Extinct.qmd")
 render_safe("D4 - Extinct.qmd")
-
-render_safe("D1 - Extant.qmd")
-render_safe("D2 - Extant.qmd")
-render_safe("D3 - Extant.qmd")
-render_safe("D4 - Extant.qmd")
