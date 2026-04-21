@@ -656,6 +656,15 @@ models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
 all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
 
+power_summary <- all_results %>%
+  group_by(model) %>%
+  summarise(
+    early = mean(isextinct[test_time < extinction_time + 10], na.rm = TRUE),
+    later = mean(isextinct[test_time >= extinction_time + 90], na.rm = TRUE)
+  )
+
+saveRDS(power_summary, "Outputs/D2/Extinct/power_summary.rds")
+
 results_summary <- all_results %>%
   group_by(model, test_time, isextinct) %>%
   tally() %>%

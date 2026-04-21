@@ -20,7 +20,7 @@ library(tidyverse)
 library(ggpubr)
 ```
 
-Load in results from Extinct and Extant simulations:
+Load in results from simulations:
 
 ```{r load-results}
 C1_initials <- readRDS("Outputs/C1/Extinct/initials.rds")
