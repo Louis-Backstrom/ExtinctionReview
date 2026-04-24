@@ -79,7 +79,7 @@ D2_plot <- ggplot(D2_joined) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
-    title = "D2 (Uncertains Continue)"
+    title = "D2 (Constant)"
   ) +
   theme_classic() +
   scale_x_continuous(limits = c(0, 1)) +
@@ -107,7 +107,7 @@ D4_plot <- ggplot(D4_joined) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
-    title = "D4 (Uncertains Increase)"
+    title = "D4 (Increasing)"
   ) +
   theme_classic() +
   scale_x_continuous(limits = c(0, 1)) +

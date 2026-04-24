@@ -722,3 +722,36 @@ all_results %>%
   tally() %>%
   print(n = Inf)
 ```
+
+# Illustrative Figure
+
+```{r illustrative-figure}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 4
+demo_iterations <- sample(seq_along(rse_data$data), 8, replace = FALSE)
+
+demo_records <- sapply(
+  rse_data$data[demo_iterations],
+  function(x) x$records$ccon
+)
+
+demo_records <- do.call(rbind, lapply(seq_along(demo_records), function(i) {
+  data.frame(x = demo_records[[i]], panel = i)
+}))
+
+ggplot(demo_records) +
+  geom_point(aes(x = x, y = 0)) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  facet_wrap(~panel, ncol = 4, nrow = 2, axes = "all") +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    panel.spacing = unit(1.0, "lines"),
+    axis.line.y = element_blank()
+  ) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  lims(x = c(0, test_time)) +
+  labs(x = "Time")
+```
