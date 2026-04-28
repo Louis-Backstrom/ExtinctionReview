@@ -1785,7 +1785,7 @@
     },
     "dodo": {
       "Package": "dodo",
-      "Version": "1.14.2",
+      "Version": "1.14.3",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Extinction Models in R",
@@ -1816,11 +1816,11 @@
       "Author": "Louis Backstrom [aut, cre]",
       "Maintainer": "Louis Backstrom <ljb38@st-andrews.ac.uk>",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "Louis-Backstrom",
       "RemoteRepo": "dodo",
       "RemoteRef": "main",
-      "RemoteSha": "2ad46a249b7afb16d34aec9f6bba085a6155d8c6",
-      "RemoteHost": "api.github.com"
+      "RemoteSha": "6e3c2a28641d9b13e357f1c948454330a565b078"
     },
     "dplyr": {
       "Package": "dplyr",
