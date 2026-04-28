@@ -726,7 +726,7 @@ accuracy_plot <- ggplot() +
   ) +
   geom_vline(
     data = thresholds,
-    aes(xintercept = threshold),
+    aes(xintercept = threshold + extinction_time),
     linetype = "dashed"
   ) +
   geom_hline(
