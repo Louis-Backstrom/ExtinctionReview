@@ -74,18 +74,15 @@ eps_rate <- 5
 
 pir_start <- p_i * p_r
 pir_end <- 0
-pir_rate <- 0.04
+pir_rate <- 5
 
 epss <- eps_start + (eps_end - eps_start) * plogis(
   seq(-eps_rate, 2 * eps_rate, length.out = 2 * extinction_time)
 )
 
-pirs <- c(
-  pir_end + (pir_start - pir_end) * (
-    exp(-pir_rate * 1:extinction_time) - exp(-pir_rate * extinction_time)) /
-    (1 - exp(-pir_rate * extinction_time)),
-  rep(pir_end, extinction_time)
-)
+pirs <- c(pir_start + (pir_end - pir_start) * plogis(
+  seq(-pir_rate, pir_rate, length.out = extinction_time)
+), rep(pir_end, extinction_time))
 
 pse <- epss * pirs
 
@@ -93,48 +90,6 @@ iterations <- 1:10
 test_times <- seq(extinction_time, length(pse), by = 1)
 
 grid <- expand.grid(test_time = test_times, iteration = iterations)
-```
-
-Plot parameters:
-
-```{r parameters-plot}
-#| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 4
-eps_plot <- ggplot() +
-  geom_line(aes(x = seq_along(epss), y = epss),
-    colour = "purple", linewidth = 1
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Epsilon (ε)") +
-  theme_bw()
-
-pir_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pirs), y = pirs),
-    colour = "turquoise", linewidth = 1
-  ) +
-  geom_line(aes(x = seq_along(pirs), y = p_i),
-    colour = "blue", linewidth = 1, linetype = "dotted"
-  ) +
-  geom_line(aes(x = seq_along(pirs), y = p_r),
-    colour = "green", linewidth = 1, linetype = "dotted"
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "p(i) × p(r)") +
-  theme_bw()
-
-pse_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pse), y = pse),
-    colour = "black", linewidth = 1
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Sighting Rate") +
-  theme_bw()
-
-ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
 ```
 
 Set up functions for records, surveys, and effort:
@@ -788,4 +743,80 @@ all_results %>%
   group_by(model, error_msg) %>%
   tally() %>%
   print(n = Inf)
+```
+
+# Illustrative Figure
+
+Plot parameters:
+
+```{r parameters-plot}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 2
+eps_plot <- ggplot() +
+  geom_line(aes(x = seq_along(epss), y = epss), linewidth = 1) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "Epsilon (ε)") +
+  theme_classic()
+
+pir_plot <- ggplot() +
+  geom_line(aes(x = seq_along(pirs), y = pirs), linewidth = 1) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "p(i) × p(r)") +
+  theme_classic()
+
+pse_plot <- ggplot() +
+  geom_line(aes(x = seq_along(pse), y = pse), linewidth = 1) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  lims(x = c(0, max(test_times)), y = c(0, 1)) +
+  labs(x = "Time", y = "Sighting Rate") +
+  theme_classic()
+
+ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
+```
+
+Plot sightings:
+
+```{r illustrative-figure}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 2
+demo_iterations <- sample(seq_along(rse_data$data), 4, replace = FALSE)
+
+demo_records <- sapply(
+  rse_data$data[demo_iterations],
+  function(x) x$records$ccon
+)
+
+demo_records <- do.call(rbind, lapply(seq_along(demo_records), function(i) {
+  data.frame(x = demo_records[[i]], panel = i)
+}))
+
+demo_test_times <- rse_data %>%
+  filter(row_number() %in% demo_iterations) %>%
+  select(test_time) %>%
+  mutate(panel = row_number())
+
+ggplot(demo_records) +
+  geom_point(aes(x = x, y = 0)) +
+  geom_vline(
+    data = demo_test_times,
+    aes(xintercept = test_time),
+    linetype = "dotted"
+  ) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  facet_wrap(~panel, ncol = 4, nrow = 1, axes = "all", scales = "free_x") +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    panel.spacing = unit(1.0, "lines"),
+    axis.line.y = element_blank()
+  ) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  scale_x_continuous(breaks = seq(0, max(test_times), by = 50)) +
+  expand_limits(x = 0) +
+  labs(x = "Time")
 ```
