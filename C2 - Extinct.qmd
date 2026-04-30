@@ -754,21 +754,21 @@ Plot parameters:
 #| fig-width: 8
 #| fig-height: 2
 eps_plot <- ggplot() +
-  geom_line(aes(x = seq_along(epss), y = epss), linewidth = 1) +
+  geom_step(aes(x = seq_along(epss), y = epss), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "Epsilon (ε)") +
   theme_classic()
 
 pir_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pirs), y = pirs), linewidth = 1) +
+  geom_step(aes(x = seq_along(pirs), y = pirs), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "p(i) × p(r)") +
   theme_classic()
 
 pse_plot <- ggplot() +
-  geom_line(aes(x = seq_along(pse), y = pse), linewidth = 1) +
+  geom_step(aes(x = seq_along(pse), y = pse), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
   labs(x = "Time", y = "Sighting Rate") +

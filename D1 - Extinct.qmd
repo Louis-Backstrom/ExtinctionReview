@@ -839,3 +839,51 @@ all_results %>%
   tally() %>%
   print(n = Inf)
 ```
+
+# Illustrative Figure
+
+```{r illustrative-figure}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 2
+demo_iterations <- sample(seq_along(rse_data$data), 4, replace = FALSE)
+
+demo_records <- do.call(
+  rbind,
+  lapply(seq_along(rse_data$data[demo_iterations]), function(i) {
+    df <- rse_data$data[demo_iterations][[i]]$records$ucon
+    df$panel <- i
+    df
+  })
+) %>%
+  mutate(class = if_else(certainty > certainty_threshold, "X", "Y"))
+
+demo_test_times <- rse_data %>%
+  select(-iteration) %>%
+  mutate(iteration = row_number()) %>%
+  filter(iteration %in% demo_iterations) %>%
+  select(iteration, test_time) %>%
+  arrange(match(iteration, demo_iterations)) %>%
+  mutate(panel = row_number())
+
+ggplot(demo_records) +
+  geom_point(aes(x = time, y = certainty, colour = class)) +
+  geom_vline(
+    data = demo_test_times,
+    aes(xintercept = test_time),
+    linetype = "dotted"
+  ) +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  facet_wrap(~panel, ncol = 4, nrow = 1, axes = "all", scales = "free_x") +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    panel.spacing = unit(1.0, "lines")
+  ) +
+  scale_colour_manual(values = c("X" = "darkblue", "Y" = "darkred")) +
+  scale_x_continuous(breaks = seq(0, max(test_times), by = 50)) +
+  expand_limits(x = 0) +
+  labs(x = "Time", y = "Certainty")
+```

@@ -115,3 +115,83 @@ D4_plot <- ggplot(D4_joined) +
 
 ggarrange(D1_plot, D2_plot, D3_plot, D4_plot, ncol = 4)
 ```
+
+# Illustrative Figure
+
+Plot sighting rates:
+
+```{r sighting-rate-plot}
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 2
+extinction_time <- 100
+max_test_time <- 200
+
+eps <- 0.5
+p_i <- 0.7
+p_r <- 0.5
+
+pse <- eps * p_i * p_r
+
+D1_rates <- tibble(
+  scenario = "D1 (Matched)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  )
+)
+
+D2_rates <- tibble(
+  scenario = "D2 (Constant)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = rep(pse, max_test_time + 1)
+)
+
+D3_rates <- tibble(
+  scenario = "D3 (Inverted)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = c(
+    rep(0, extinction_time + 1),
+    rep(pse, max_test_time - extinction_time)
+  )
+)
+
+D4_rates <- tibble(
+  scenario = "D4 (Increasing)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = pse * (0:max_test_time) / extinction_time
+)
+
+sighting_rates <- bind_rows(D1_rates, D2_rates, D3_rates, D4_rates)
+
+ggplot(sighting_rates) +
+  geom_step(aes(x = time, y = u_rate), colour = "darkred") +
+  geom_step(aes(x = time, y = c_rate), colour = "darkblue", linetype = "11") +
+  geom_vline(xintercept = extinction_time, linetype = "dashed") +
+  facet_wrap(~scenario, ncol = 4, nrow = 1, axes = "all") +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(hjust = 0),
+    panel.spacing = unit(1.0, "lines")
+  ) +
+  lims(x = c(0, max_test_time), y = c(0, 1)) +
+  labs(x = "Time", y = "Sighting Rate")
+```

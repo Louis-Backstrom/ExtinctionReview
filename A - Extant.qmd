@@ -728,8 +728,8 @@ all_results %>%
 ```{r illustrative-figure}
 #| fig-dpi: 600
 #| fig-width: 8
-#| fig-height: 4
-demo_iterations <- sample(seq_along(rse_data$data), 8, replace = FALSE)
+#| fig-height: 2
+demo_iterations <- sample(seq_along(rse_data$data), 4, replace = FALSE)
 
 demo_records <- sapply(
   rse_data$data[demo_iterations],
@@ -743,7 +743,7 @@ demo_records <- do.call(rbind, lapply(seq_along(demo_records), function(i) {
 ggplot(demo_records) +
   geom_point(aes(x = x, y = 0)) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  facet_wrap(~panel, ncol = 4, nrow = 2, axes = "all") +
+  facet_wrap(~panel, ncol = 4, nrow = 1, axes = "all") +
   theme_classic() +
   theme(
     strip.background = element_blank(),
