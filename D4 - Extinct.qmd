@@ -815,11 +815,11 @@ accuracy_plot +
 
 ```{r accuracy-landscape}
 #| fig-dpi: 600
-#| fig-width: 16
-#| fig-height: 8
+#| fig-width: 12
+#| fig-height: 3
 accuracy_plot +
   facet_wrap2(~model,
-    drop = FALSE, ncol = 6, nrow = 3,
+    drop = FALSE, ncol = 9, nrow = 2,
     axes = "all", remove_labels = "all"
   )
 ```
