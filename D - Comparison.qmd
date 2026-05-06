@@ -23,10 +23,16 @@ library(ggpubr)
 Load in results from simulations:
 
 ```{r load-results}
-D1_power_summary <- readRDS("Outputs/D1/Extinct/power_summary.rds")
-D2_power_summary <- readRDS("Outputs/D2/Extinct/power_summary.rds")
-D3_power_summary <- readRDS("Outputs/D3/Extinct/power_summary.rds")
-D4_power_summary <- readRDS("Outputs/D4/Extinct/power_summary.rds")
+best_models <- readRDS("Outputs/A/best_models.rds")
+
+D1_power_summary <- readRDS("Outputs/D1/Extinct/power_summary.rds") %>%
+  mutate(best_model = model %in% best_models)
+D2_power_summary <- readRDS("Outputs/D2/Extinct/power_summary.rds") %>%
+  mutate(best_model = model %in% best_models)
+D3_power_summary <- readRDS("Outputs/D3/Extinct/power_summary.rds") %>%
+  mutate(best_model = model %in% best_models)
+D4_power_summary <- readRDS("Outputs/D4/Extinct/power_summary.rds") %>%
+  mutate(best_model = model %in% best_models)
 ```
 
 # Extinct Comparison
@@ -41,77 +47,98 @@ Compare D1 with D2, D3, and D4:
 D2_joined <- left_join(
   D1_power_summary,
   D2_power_summary,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_D1", "_D2")
 )
 
 D3_joined <- left_join(
   D1_power_summary,
   D3_power_summary,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_D1", "_D3")
 )
 
 D4_joined <- left_join(
   D1_power_summary,
   D4_power_summary,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_D1", "_D4")
 )
 
 D1_plot <- ggplot(D1_power_summary) +
-  geom_point(aes(x = early, y = later)) +
+  geom_point(aes(x = early, y = later, colour = best_model)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
-    title = "D1 (Matched)"
+    title = "D1 (Null)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
+
 
 D2_plot <- ggplot(D2_joined) +
-  geom_segment(aes(x = early_D1, y = later_D1, xend = early_D2, yend = later_D2), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = early_D1, y = later_D1, xend = early_D2, yend = later_D2),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D2, y = later_D2)) +
+  geom_point(aes(x = early_D2, y = later_D2, colour = best_model)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
-    title = "D2 (Constant)"
+    title = "D2 (Matched)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
+
 
 D3_plot <- ggplot(D3_joined) +
-  geom_segment(aes(x = early_D1, y = later_D1, xend = early_D3, yend = later_D3), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = early_D1, y = later_D1, xend = early_D3, yend = later_D3),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D3, y = later_D3)) +
+  geom_point(aes(x = early_D3, y = later_D3, colour = best_model)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
-    title = "D3 (Inverted)"
+    title = "D3 (Constant)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
+
 
 D4_plot <- ggplot(D4_joined) +
-  geom_segment(aes(x = early_D1, y = later_D1, xend = early_D4, yend = later_D4), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = early_D1, y = later_D1, xend = early_D4, yend = later_D4),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D4, y = later_D4)) +
+  geom_point(aes(x = early_D4, y = later_D4, colour = best_model)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Average Power Early After Extinction",
     y = "Average Power Later After Extinction",
     title = "D4 (Increasing)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
+
 
 ggarrange(D1_plot, D2_plot, D3_plot, D4_plot, ncol = 4)
 ```
@@ -134,30 +161,7 @@ p_r <- 0.5
 pse <- eps * p_i * p_r
 
 D1_rates <- tibble(
-  scenario = "D1 (Matched)",
-  time = seq(0, max_test_time, by = 1),
-  c_rate = c(
-    rep(pse, extinction_time + 1),
-    rep(0, max_test_time - extinction_time)
-  ),
-  u_rate = c(
-    rep(pse, extinction_time + 1),
-    rep(0, max_test_time - extinction_time)
-  )
-)
-
-D2_rates <- tibble(
-  scenario = "D2 (Constant)",
-  time = seq(0, max_test_time, by = 1),
-  c_rate = c(
-    rep(pse, extinction_time + 1),
-    rep(0, max_test_time - extinction_time)
-  ),
-  u_rate = rep(pse, max_test_time + 1)
-)
-
-D3_rates <- tibble(
-  scenario = "D3 (Inverted)",
+  scenario = "D1 (Null)",
   time = seq(0, max_test_time, by = 1),
   c_rate = c(
     rep(pse, extinction_time + 1),
@@ -165,8 +169,31 @@ D3_rates <- tibble(
   ),
   u_rate = c(
     rep(0, extinction_time + 1),
-    rep(pse, max_test_time - extinction_time)
+    rep(0, max_test_time - extinction_time)
   )
+)
+
+D2_rates <- tibble(
+  scenario = "D2 (Matched)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  )
+)
+
+D3_rates <- tibble(
+  scenario = "D3 (Constant)",
+  time = seq(0, max_test_time, by = 1),
+  c_rate = c(
+    rep(pse, extinction_time + 1),
+    rep(0, max_test_time - extinction_time)
+  ),
+  u_rate = rep(pse, max_test_time + 1)
 )
 
 D4_rates <- tibble(

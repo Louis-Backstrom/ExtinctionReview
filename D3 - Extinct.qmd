@@ -101,7 +101,6 @@ create_records <- function(extinction_time, pse, test_time) {
         counts <- rpois(extinction_time, pse)
       } else {
         counts <- rpois(test_time, pse)
-        counts[1:extinction_time] <- 0
       }
 
       records <- rep(seq_along(counts), counts)
@@ -885,6 +884,7 @@ ggplot(demo_records) +
   ) +
   scale_colour_manual(values = c("X" = "darkblue", "Y" = "darkred")) +
   scale_x_continuous(breaks = seq(0, max(test_times), by = 50)) +
+  scale_y_continuous(limits = c(0, 1)) +
   expand_limits(x = 0) +
   labs(x = "Time", y = "Certainty")
 ```

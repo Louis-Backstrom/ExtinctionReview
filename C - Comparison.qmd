@@ -23,20 +23,34 @@ library(ggpubr)
 Load in results from simulations:
 
 ```{r load-results}
-C1_initials <- readRDS("Outputs/C1/Extinct/initials.rds")
-C2_initials <- readRDS("Outputs/C2/Extinct/initials.rds")
-C3_initials <- readRDS("Outputs/C3/Extinct/initials.rds")
-C4_initials <- readRDS("Outputs/C4/Extinct/initials.rds")
+best_models <- readRDS("Outputs/A/best_models.rds")
 
-C1_thresholds <- readRDS("Outputs/C1/Extinct/thresholds.rds")
-C2_thresholds <- readRDS("Outputs/C2/Extinct/thresholds.rds")
-C3_thresholds <- readRDS("Outputs/C3/Extinct/thresholds.rds")
-C4_thresholds <- readRDS("Outputs/C4/Extinct/thresholds.rds")
+C1_initials <- readRDS("Outputs/C1/Extinct/initials.rds") %>%
+  mutate(best_model = model %in% best_models)
+C2_initials <- readRDS("Outputs/C2/Extinct/initials.rds") %>%
+  mutate(best_model = model %in% best_models)
+C3_initials <- readRDS("Outputs/C3/Extinct/initials.rds") %>%
+  mutate(best_model = model %in% best_models)
+C4_initials <- readRDS("Outputs/C4/Extinct/initials.rds") %>%
+  mutate(best_model = model %in% best_models)
 
-C1_extinct <- left_join(C1_initials, C1_thresholds, by = "model")
-C2_extinct <- left_join(C2_initials, C2_thresholds, by = "model")
-C3_extinct <- left_join(C3_initials, C3_thresholds, by = "model")
-C4_extinct <- left_join(C4_initials, C4_thresholds, by = "model")
+C1_thresholds <- readRDS("Outputs/C1/Extinct/thresholds.rds") %>%
+  mutate(best_model = model %in% best_models)
+C2_thresholds <- readRDS("Outputs/C2/Extinct/thresholds.rds") %>%
+  mutate(best_model = model %in% best_models)
+C3_thresholds <- readRDS("Outputs/C3/Extinct/thresholds.rds") %>%
+  mutate(best_model = model %in% best_models)
+C4_thresholds <- readRDS("Outputs/C4/Extinct/thresholds.rds") %>%
+  mutate(best_model = model %in% best_models)
+
+C1_extinct <- left_join(C1_initials, C1_thresholds, by = "model") %>%
+  mutate(best_model = model %in% best_models)
+C2_extinct <- left_join(C2_initials, C2_thresholds, by = "model") %>%
+  mutate(best_model = model %in% best_models)
+C3_extinct <- left_join(C3_initials, C3_thresholds, by = "model") %>%
+  mutate(best_model = model %in% best_models)
+C4_extinct <- left_join(C4_initials, C4_thresholds, by = "model") %>%
+  mutate(best_model = model %in% best_models)
 ```
 
 # Extinct Comparison
@@ -51,69 +65,98 @@ Compare C1 with C2, C3, and C4:
 C2_joined <- left_join(
   C1_extinct,
   C2_extinct,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_C1", "_C2")
 )
 
 C3_joined <- left_join(
   C1_extinct,
   C3_extinct,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_C1", "_C3")
 )
 
 C4_joined <- left_join(
   C1_extinct,
   C4_extinct,
-  by = "model",
+  by = c("model", "best_model"),
   suffix = c("_C1", "_C4")
 )
 
+max_threshold <- max(
+  max(C1_extinct$threshold, na.rm = TRUE),
+  max(C2_extinct$threshold, na.rm = TRUE),
+  max(C3_extinct$threshold, na.rm = TRUE),
+  max(C4_extinct$threshold, na.rm = TRUE)
+)
+
 C1_plot <- ggplot(C1_extinct) +
-  geom_point(aes(x = power, y = threshold)) +
+  geom_point(aes(x = power, y = threshold, colour = best_model)) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
     title = "C1 (Null)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
 
 C2_plot <- ggplot(C2_joined) +
-  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C2, yend = threshold_C2), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = power_C1, y = threshold_C1, xend = power_C2, yend = threshold_C2),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C2, y = threshold_C2)) +
+  geom_point(aes(x = power_C2, y = threshold_C2, colour = best_model)) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
     title = "C2 (Declining Detectability)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
+
 
 C3_plot <- ggplot(C3_joined) +
-  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C3, y = threshold_C3)) +
+  geom_point(aes(x = power_C3, y = threshold_C3, colour = best_model)) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
     title = "C3 (Increasing Survey Effort)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
 
 C4_plot <- ggplot(C4_joined) +
-  geom_segment(aes(x = power_C1, y = threshold_C1, xend = power_C4, yend = threshold_C4), colour = "grey90", linewidth = 0.25) +
+  geom_segment(
+    aes(x = power_C1, y = threshold_C1, xend = power_C4, yend = threshold_C4),
+    colour = "grey90", linewidth = 0.25
+  ) +
   geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C4, y = threshold_C4)) +
+  geom_point(aes(x = power_C4, y = threshold_C4, colour = best_model)) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
     title = "C4 (Combined)"
   ) +
   theme_classic() +
-  scale_x_continuous(limits = c(0, 1))
+  theme(legend.position = "none")
 
 ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
 ```

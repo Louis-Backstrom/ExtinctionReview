@@ -54,12 +54,11 @@ test_time <- 100
 scenario_a <- left_join(thresholds, error_rates, by = "model")
 
 comparison_plot <- ggplot(scenario_a) +
-  geom_rect(
-    aes(
-      xmin = ideal_threshold[1], xmax = ideal_threshold[2],
-      ymin = ideal_errorrate[1], ymax = ideal_errorrate[2]
-    ),
-    fill = "palegreen", colour = NA
+  annotate(
+    "rect",
+    xmin = ideal_threshold[1], xmax = ideal_threshold[2],
+    ymin = ideal_errorrate[1], ymax = ideal_errorrate[2],
+    fill = "green", colour = NA, alpha = 0.5
   ) +
   geom_point(aes(x = threshold, y = error_rate)) +
   scale_x_continuous(
@@ -154,6 +153,8 @@ all_plot
 best_models <- scenario_a %>%
   filter(threshold < 125, error_rate < 0.1) %>%
   pull(model)
+
+saveRDS(best_models, "Outputs/A/best_models.rds")
 
 print(length(best_models))
 

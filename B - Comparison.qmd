@@ -23,8 +23,12 @@ library(ggpubr)
 Load in results from Extinct and Extant simulations:
 
 ```{r load-results}
-extinct_results <- readRDS("Outputs/B/Extinct/accuracy_results.rds")
-extant_results <- readRDS("Outputs/B/Extant/accuracy_results.rds")
+best_models <- readRDS("Outputs/A/best_models.rds")
+
+extinct_results <- readRDS("Outputs/B/Extinct/accuracy_results.rds") %>%
+  mutate(best_model = model %in% best_models)
+extant_results <- readRDS("Outputs/B/Extant/accuracy_results.rds") %>%
+  mutate(best_model = model %in% best_models)
 ```
 
 Re-specify relevant parameters used in simulations:
@@ -42,7 +46,7 @@ beta <- 0.2
 extinct_plot <- ggplot() +
   geom_line(
     data = extinct_results,
-    aes(x = extinction_time, y = threshold, group = model),
+    aes(x = extinction_time, y = threshold, group = model, colour = best_model),
     linewidth = 1,
     alpha = 0.1
   ) +
@@ -54,8 +58,10 @@ extinct_plot <- ggplot() +
     linewidth = 2
   ) +
   scale_y_continuous(limits = c(0, 150)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   theme_classic() +
   theme(
+    legend.position = "none",
     strip.background = element_blank(),
     strip.text = element_text(family = "mono", face = "bold")
   ) +
@@ -71,7 +77,7 @@ extinct_plot <- ggplot() +
 inst_plot <- ggplot() +
   geom_line(
     data = extant_results,
-    aes(x = test_time, y = inst_error_rate, group = model),
+    aes(x = test_time, y = inst_error_rate, group = model, colour = best_model),
     linewidth = 1,
     alpha = 0.1
   ) +
@@ -83,7 +89,9 @@ inst_plot <- ggplot() +
     linewidth = 2
   ) +
   scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   theme_classic() +
+  theme(legend.position = "none") +
   labs(
     title = "Extant (Instantaneous)",
     x = paste0("Duration of Sighting Record"),
@@ -93,7 +101,7 @@ inst_plot <- ggplot() +
 cum_plot <- ggplot() +
   geom_line(
     data = extant_results,
-    aes(x = test_time, y = cum_error_rate, group = model),
+    aes(x = test_time, y = cum_error_rate, group = model, colour = best_model),
     linewidth = 1,
     alpha = 0.1
   ) +
@@ -105,7 +113,9 @@ cum_plot <- ggplot() +
     linewidth = 2
   ) +
   scale_y_continuous(limits = c(0, 1)) +
+  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
   theme_classic() +
+  theme(legend.position = "none") +
   labs(
     title = "Extant (Cumulative)",
     x = paste0("Duration of Sighting Record"),
