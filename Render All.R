@@ -31,3 +31,6 @@ render_safe("D2 - Extinct.qmd")
 render_safe("D3 - Extinct.qmd")
 render_safe("D4 - Extinct.qmd")
 render_safe("D - Comparison.qmd")
+
+
+render_safe("Slender-billed Curlew - Challenge.qmd")
