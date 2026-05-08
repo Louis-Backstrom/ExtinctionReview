@@ -238,8 +238,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       test.time = NULL, curr.time = NULL
     ),
     "WA16B1" = WA16B1(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      use.mpfr = FALSE, cores = 1, pb = FALSE
+      records = records$ccon, alpha = alpha, init.time = 1
     ),
     "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
     "BR19F1" = BR19F1(

@@ -94,7 +94,7 @@ C1_plot <- ggplot(C1_extinct) +
   geom_point(aes(x = power, y = threshold, colour = best_model)) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
-  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
+  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -112,7 +112,7 @@ C2_plot <- ggplot(C2_joined) +
   geom_point(aes(x = power_C2, y = threshold_C2, colour = best_model)) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
-  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
+  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -131,7 +131,7 @@ C3_plot <- ggplot(C3_joined) +
   geom_point(aes(x = power_C3, y = threshold_C3, colour = best_model)) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
-  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
+  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -149,7 +149,7 @@ C4_plot <- ggplot(C4_joined) +
   geom_point(aes(x = power_C4, y = threshold_C4, colour = best_model)) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
-  scale_colour_manual(values = c("TRUE" = "green", "FALSE" = "black")) +
+  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",

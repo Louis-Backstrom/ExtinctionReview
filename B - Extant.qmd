@@ -236,8 +236,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       test.time = NULL, curr.time = NULL
     ),
     "WA16B1" = WA16B1(
-      records = records$ccon, alpha = alpha, init.time = 1,
-      use.mpfr = FALSE, cores = 1, pb = FALSE
+      records = records$ccon, alpha = alpha, init.time = 1
     ),
     "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
     "BR19F1" = BR19F1(
@@ -561,15 +560,9 @@ models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
 accuracy_results <- all_results %>%
   group_by(model, iteration) %>%
   arrange(test_time) %>%
-  mutate(
-    inst_error = replace_na(isextinct, 0),
-    cum_error = cummax(inst_error),
-  ) %>%
+  mutate(t1_error = replace_na(isextinct, 0)) %>%
   group_by(model, test_time) %>%
-  summarise(
-    inst_error_rate = mean(inst_error),
-    cum_error_rate = mean(cum_error)
-  ) %>%
+  summarise(t1_error_rate = mean(t1_error)) %>%
   mutate(model = factor(model, levels = models))
 
 saveRDS(accuracy_results, "Outputs/B/Extant/accuracy_results.rds")
@@ -577,9 +570,9 @@ saveRDS(accuracy_results, "Outputs/B/Extant/accuracy_results.rds")
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
-inst_accuracy_plot <- ggplot(accuracy_results) +
+accuracy_plot <- ggplot(accuracy_results) +
   geom_line(
-    aes(x = test_time, y = inst_error_rate)
+    aes(x = test_time, y = t1_error_rate)
   ) +
   geom_label(
     data = excluded,
@@ -594,27 +587,7 @@ inst_accuracy_plot <- ggplot(accuracy_results) +
   ) +
   labs(
     x = paste0("Duration of Sighting Record"),
-    y = "Observed Instantaneous Type I Error Rate"
-  )
-
-cum_accuracy_plot <- ggplot(accuracy_results) +
-  geom_line(
-    aes(x = test_time, y = cum_error_rate)
-  ) +
-  geom_label(
-    data = excluded,
-    label = "Excluded", x = (min(test_times) + max(test_times)) / 2,
-    y = 0.5, fontface = "italic"
-  ) +
-  scale_y_continuous(limits = c(0, 1)) +
-  theme_classic() +
-  theme(
-    legend.position = "none", strip.background = element_blank(),
-    strip.text = element_text(family = "mono", face = "bold")
-  ) +
-  labs(
-    x = paste0("Duration of Sighting Record"),
-    y = "Observed Cumulative Type I Error Rate"
+    y = "Observed Type I Error Rate"
   )
 ```
 
@@ -622,13 +595,7 @@ cum_accuracy_plot <- ggplot(accuracy_results) +
 #| fig-dpi: 600
 #| fig-width: 9
 #| fig-height: 12
-inst_accuracy_plot +
-  facet_wrap2(~model,
-    drop = FALSE, ncol = 6, nrow = 8,
-    axes = "all", remove_labels = "all"
-  )
-
-cum_accuracy_plot +
+accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 6, nrow = 8,
     axes = "all", remove_labels = "all"
@@ -639,13 +606,7 @@ cum_accuracy_plot +
 #| fig-dpi: 600
 #| fig-width: 12
 #| fig-height: 6
-inst_accuracy_plot +
-  facet_wrap2(~model,
-    drop = FALSE, ncol = 8, nrow = 6,
-    axes = "all", remove_labels = "all"
-  )
-
-cum_accuracy_plot +
+accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
