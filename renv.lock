@@ -1859,7 +1859,7 @@
     },
     "dodo": {
       "Package": "dodo",
-      "Version": "1.15.0",
+      "Version": "1.15.2",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Extinction Models in R",
@@ -1873,7 +1873,6 @@
         "coda",
         "graphics",
         "matrixStats",
-        "parallel",
         "Rmpfr",
         "stats",
         "utils"
@@ -1894,7 +1893,7 @@
       "RemoteUsername": "Louis-Backstrom",
       "RemoteRepo": "dodo",
       "RemoteRef": "main",
-      "RemoteSha": "a176852ee5c4485afb83939e5f144678cae66c54"
+      "RemoteSha": "74a197d869e2aa2e192c6da342e8e83f6142fb87"
     },
     "dplyr": {
       "Package": "dplyr",
