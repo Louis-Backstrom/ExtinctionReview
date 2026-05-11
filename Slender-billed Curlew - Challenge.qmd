@@ -544,7 +544,7 @@ for (model in models) {
       result <- if (is.null(output)) {
         tibble(
           model = model, test_time = test_time,
-          last_time = max(records$ccon), isextinct = NA,
+          last_time = max(records$ccon), isextinct = NA, output = NA,
           warning = length(warning_msg) > 0, error = TRUE,
           warning_msg = if (length(warning_msg) > 0) {
             paste(unique(warning_msg), collapse = " | ")
@@ -562,7 +562,7 @@ for (model in models) {
           model = model, test_time = test_time,
           last_time = max(records$ccon), isextinct = test_model(
             model, output, alpha, test_time
-          ),
+          ), output = list(output),
           warning = length(warning_msg) > 0, error = FALSE,
           warning_msg = if (length(warning_msg) > 0) {
             paste(unique(warning_msg), collapse = " | ")
@@ -647,6 +647,9 @@ ggplot(model_times) +
 # Summary
 
 ```{r summary}
+#| fig-dpi: 600
+#| fig-width: 3
+#| fig-height: 3
 models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
@@ -654,9 +657,46 @@ models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
 all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
 
-results_plot <- ggplot(all_results) +
-  geom_point(aes(x = test_time, y = as.integer(isextinct))) +
-  geom_line(aes(x = test_time, y = as.integer(isextinct)), linewidth = 1) +
+excluded <- all_results %>%
+  left_join(tibble(model = models), ., by = "model") %>%
+  group_by(model) %>%
+  summarise(na_prop = mean(is.na(isextinct))) %>%
+  filter(na_prop >= 0.5) %>%
+  select(model) %>%
+  mutate(model = factor(model, levels = models))
+
+summary_plot <- all_results %>% 
+  group_by(test_time) %>% 
+  summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>% 
+  ggplot() +
+  geom_point(aes(x = test_time, y = extinct_count)) +
+  geom_line(aes(x = test_time, y = extinct_count), linewidth = 1) +
+  geom_hline(
+    yintercept = length(models) - nrow(excluded), 
+    linetype = "dashed", linewidth = 1
+    ) +
+  theme_classic() +
+  labs(
+    x = "Test Time",
+    y = "Number of Models Inferring Extinction"
+  )
+
+summary_plot
+
+results_plot <- ggplot() +
+  geom_point(
+    data = all_results,
+    aes(x = test_time, y = as.integer(isextinct))
+  ) +
+  geom_line(
+    data = all_results,
+    aes(x = test_time, y = as.integer(isextinct)), linewidth = 1
+  ) +
+  geom_label(
+    data = excluded,
+    label = "Excluded", x = (lost_time + last_time) / 2,
+    y = 0.5, fontface = "italic"
+  ) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -689,3 +729,46 @@ results_plot +
     axes = "all", remove_labels = "all"
   )
 ```
+
+```{r summary-models}
+test_results <- all_results %>%
+  filter(test_time == max(test_time))
+
+test_results %>%
+  group_by(isextinct) %>%
+  tally()
+
+estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
+  sheet = 2, range = "D2:T50"
+) %>%
+  fill(everything(), .direction = "down") %>%
+  filter(`Est.` == "✓") %>%
+  pull(ID)
+
+estimate_results <- test_results %>%
+  filter(model %in% estimate_models) %>%
+  mutate(estimate = purrr::map(output, "estimate")) %>%
+  pull(estimate) %>%
+  as.numeric() 
+
+length(estimate_results)
+summary(estimate_results)
+
+interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
+  sheet = 2, range = "D2:T50"
+) %>%
+  fill(everything(), .direction = "down") %>%
+  filter(`Int.` == "✓") %>%
+  pull(ID)
+
+interval_results <- test_results %>%
+  filter(model %in% interval_models) %>%
+  mutate(interval = purrr::map(output, ~ .x$cred.int %||% .x$conf.int)) %>%
+  pull(interval) %>%
+  purrr::map_dbl(2) %>%
+  as.numeric() 
+
+length(interval_results)
+summary(interval_results)
+```
+
