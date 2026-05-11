@@ -63,6 +63,7 @@ alpha <- 0.05
 
 init_time <- 1817 # Original description
 last_time <- 2022 # End of Buchanan et al. dataset
+curr_time <- 2026 # Current year
 
 certainty_threshold <- 0.9
 ```
@@ -346,11 +347,11 @@ lost_time <- records_raw %>%
   pull(year) %>%
   max()
 
-test_times <- lost_time:last_time
+test_times <- lost_time:curr_time
 grid <- expand.grid(test_time = test_times)
 
 records_full <- convert_dodo(records_raw,
-  init.time = init_time, test.time = last_time,
+  init.time = init_time, test.time = curr_time,
   threshold = certainty_threshold, unique = TRUE,
   aggregate = "max", time = "year", certainty = "p_ci",
   certainty_lower = "p_ci_min", certainty_upper = "p_ci_max"
@@ -395,7 +396,7 @@ surveys_raw_passive <- read_xlsx("Data/Numenius tenuirostris.xlsx",
     p_r_upper = pr_upper
   ) %>%
   expand_grid(
-    tibble(time = init_time:last_time) %>%
+    tibble(time = init_time:curr_time) %>%
       filter_out(time %in% surveys_raw_active$time),
     .
   )
@@ -425,7 +426,7 @@ if (!file.exists("Outputs/Slender-billed Curlew/effort_full.rds") | overwrite) {
   )
 
   for (country in core_countries) {
-    for (year in init_time:last_time) {
+    for (year in init_time:curr_time) {
       species_list <- occ_search(
         taxonKey = 212, # Birds
         country = country,
@@ -451,7 +452,7 @@ if (!file.exists("Outputs/Slender-billed Curlew/effort_full.rds") | overwrite) {
     drop_na(species) %>%
     group_by(year) %>%
     summarise(n_species = n_distinct(species)) %>%
-    left_join(tibble(year = init_time:last_time), ., by = "year") %>%
+    left_join(tibble(year = init_time:curr_time), ., by = "year") %>%
     mutate(n_species = replace_na(n_species, 0)) %>%
     pull(n_species)
 } else {
@@ -627,6 +628,7 @@ model_times <- readRDS("Outputs/Slender-billed Curlew/model_times.rds")
 total_time <- sum(model_times$run_time) / 60
 cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
 ```
+
 # Runtime
 
 ```{r runtime}
@@ -665,22 +667,25 @@ excluded <- all_results %>%
   select(model) %>%
   mutate(model = factor(model, levels = models))
 
-summary_plot <- all_results %>% 
-  group_by(test_time) %>% 
-  summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>% 
+summary_plot <- all_results %>%
+  group_by(test_time) %>%
+  summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>%
   ggplot() +
   geom_point(aes(x = test_time, y = extinct_count)) +
   geom_line(aes(x = test_time, y = extinct_count), linewidth = 1) +
   geom_hline(
-    yintercept = length(models) - nrow(excluded), 
+    yintercept = length(models) - nrow(excluded),
     linetype = "dashed", linewidth = 1
-    ) +
+  ) +
+  geom_vline(xintercept = last_time, linetype = "dotted", linewidth = 1) +
   theme_classic() +
   labs(
     x = "Test Time",
-    y = "Number of Models Inferring Extinction"
+    y = "Number of Models Inferring Extinction",
+    title = "Slender-billed Curlew"
   )
 
+saveRDS(summary_plot, "Outputs/Slender-billed Curlew/summary_plot.rds")
 summary_plot
 
 results_plot <- ggplot() +
@@ -694,7 +699,7 @@ results_plot <- ggplot() +
   ) +
   geom_label(
     data = excluded,
-    label = "Excluded", x = (lost_time + last_time) / 2,
+    label = "Excluded", x = (lost_time + curr_time) / 2,
     y = 0.5, fontface = "italic"
   ) +
   theme_classic() +
@@ -731,10 +736,19 @@ results_plot +
 ```
 
 ```{r summary-models}
-test_results <- all_results %>%
+last_extinct <- all_results %>%
+  filter(test_time == .env$last_time)
+
+cat("Extinction inference at end of original dataset:")
+last_extinct %>%
+  group_by(isextinct) %>%
+  tally()
+
+curr_extinct <- all_results %>%
   filter(test_time == max(test_time))
 
-test_results %>%
+cat("Extinction inference in final year:")
+curr_extinct %>%
   group_by(isextinct) %>%
   tally()
 
@@ -745,14 +759,15 @@ estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
   filter(`Est.` == "✓") %>%
   pull(ID)
 
-estimate_results <- test_results %>%
-  filter(model %in% estimate_models) %>%
+curr_estimate <- curr_extinct %>%
+  filter(model %in% estimate_models, !is.na(isextinct)) %>%
   mutate(estimate = purrr::map(output, "estimate")) %>%
   pull(estimate) %>%
-  as.numeric() 
+  as.numeric()
 
-length(estimate_results)
-summary(estimate_results)
+cat("Estimated extinction times:")
+length(curr_estimate)
+summary(curr_estimate)
 
 interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
   sheet = 2, range = "D2:T50"
@@ -761,14 +776,15 @@ interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
   filter(`Int.` == "✓") %>%
   pull(ID)
 
-interval_results <- test_results %>%
-  filter(model %in% interval_models) %>%
+curr_interval <- curr_extinct %>%
+  filter(model %in% interval_models, !is.na(isextinct)) %>%
   mutate(interval = purrr::map(output, ~ .x$cred.int %||% .x$conf.int)) %>%
   pull(interval) %>%
   purrr::map_dbl(2) %>%
-  as.numeric() 
+  as.numeric()
 
-length(interval_results)
-summary(interval_results)
+cat("Estimated upper interval bounds:")
+length(curr_interval)
+summary(curr_interval)
 ```
 

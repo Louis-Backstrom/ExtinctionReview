@@ -1,0 +1,40 @@
+---
+title: "Examples | Comparison"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+editor: visual
+execute: 
+  warning: false
+lightbox: true  
+---
+
+# Setup
+
+Load libraries:
+
+```{r load-libraries}
+library(tidyverse)
+library(ggpubr)
+```
+
+Load in plots from example species case studies:
+
+```{r load-results}
+owl_plot <- readRDS("Outputs/Laughing Owl/summary_plot.rds")
+courser_plot <- readRDS("Outputs/Jerdon's Courser/summary_plot.rds")
+curlew_plot <- readRDS("Outputs/Slender-billed Curlew/summary_plot.rds")
+```
+
+# Plot
+
+Combine plots:
+
+```{r plot}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 3
+ggarrange(owl_plot, courser_plot, curlew_plot, ncol = 3)
+```
