@@ -142,38 +142,74 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     "TH13B1" = TH13B1(
       records = records$umcb,
       priors = list(
-        p = list(p1 = 0.5, p2 = 0.5, p3 = 0.5, p4 = 0.5, p5 = 0.5, p6 = 0.6),
-        q = list(q1 = 1.0, q2 = 1.0, q3 = 0.5, q4 = 0.5, q5 = 0.5, q6 = 0.6)
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), 0.5, simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
+        ),
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) 1 else 0.5
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
+        )
       ),
-      certain = c(1, 2), PXT = NULL, PE = NULL
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL
     ),
     "TH13B2" = TH13B2(
       records = records$umcb,
       priors = list(
-        p = list(
-          p1 = c(0, 1), p2 = c(0, 1), p3 = c(0, 1),
-          p4 = c(0, 1), p5 = c(0, 1), p6 = c(0, 1)
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), c(0, 1), simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
         ),
-        q = list(
-          q1 = c(1, 1), q2 = c(1, 1), q3 = c(0, 1),
-          q4 = c(0, 1), q5 = c(0, 1), q6 = c(0, 1)
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) c(1, 1) else c(0, 1)
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
         )
-      ), certain = c(1, 2), PXT = NULL, PE = NULL,
-      n.iter = 10e3, pb = FALSE
+      ),
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
     ),
     "TH13B3" = TH13B3(
       records = records$umcb,
       priors = list(
-        p = list(
-          p1 = c(0, 1), p2 = c(0, 1), p3 = c(0, 1),
-          p4 = c(0, 1), p5 = c(0, 1), p6 = c(0, 1)
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), c(0, 1), simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
         ),
-        q = list(
-          q1 = c(1, 1), q2 = c(1, 1), q3 = c(0, 1),
-          q4 = c(0, 1), q5 = c(0, 1), q6 = c(0, 1)
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) c(1, 1) else c(0, 1)
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
         )
-      ), certain = c(1, 2), PXT = NULL, PE = NULL,
-      n.iter = 10e3, pb = FALSE
+      ),
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
     ),
     "AL14B1" = AL14B1(records = records$cbin),
     "CB14B1" = CB14B1(
@@ -661,11 +697,16 @@ all_results <- all_results %>%
 
 excluded <- all_results %>%
   left_join(tibble(model = models), ., by = "model") %>%
-  group_by(model) %>%
-  summarise(na_prop = mean(is.na(isextinct))) %>%
-  filter(na_prop >= 0.5) %>%
+  filter(is.na(isextinct)) %>%
   select(model) %>%
+  unique() %>%
   mutate(model = factor(model, levels = models))
+
+all_results <- all_results %>%
+  filter_out(model %in% excluded$model) %>%
+  mutate(model = factor(model, levels = models))
+
+cat("Excluded (NA outputs):", as.character(excluded$model))
 
 summary_plot <- all_results %>%
   group_by(test_time) %>%
@@ -677,7 +718,6 @@ summary_plot <- all_results %>%
     yintercept = length(models) - nrow(excluded),
     linetype = "dashed", linewidth = 1
   ) +
-  geom_vline(xintercept = last_time, linetype = "dotted", linewidth = 1) +
   theme_classic() +
   labs(
     x = "Test Time",
@@ -756,7 +796,12 @@ estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
   sheet = 2, range = "D2:T50"
 ) %>%
   fill(everything(), .direction = "down") %>%
-  filter(`Est.` == "✓") %>%
+  filter(
+    ID %in% (curr_extinct %>%
+      filter(isextinct == TRUE) %>%
+      pull(model)),
+    `Est.` == "✓"
+  ) %>%
   pull(ID)
 
 curr_estimate <- curr_extinct %>%
@@ -773,7 +818,12 @@ interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
   sheet = 2, range = "D2:T50"
 ) %>%
   fill(everything(), .direction = "down") %>%
-  filter(`Int.` == "✓") %>%
+  filter(
+    ID %in% (curr_extinct %>%
+      filter(isextinct == TRUE) %>%
+      pull(model)),
+    `Int.` == "✓"
+  ) %>%
   pull(ID)
 
 curr_interval <- curr_extinct %>%
@@ -787,4 +837,3 @@ cat("Estimated upper interval bounds:")
 length(curr_interval)
 summary(curr_interval)
 ```
-

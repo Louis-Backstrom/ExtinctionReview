@@ -1,0 +1,840 @@
+---
+title: "Alaotra Grebe | Extinct"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+editor: visual
+execute: 
+  warning: false
+lightbox: true  
+---
+
+# Setup
+
+Install `dodo` (if needed):
+
+```{r install-dodo, output=FALSE}
+renv::install("Louis-Backstrom/dodo")
+```
+
+```{r dodo-version}
+cat("Using dodo version", as.character(packageVersion("dodo")))
+```
+
+Load libraries:
+
+```{r load-libraries}
+library(dodo)
+library(tidyverse)
+library(readxl)
+library(countrycode)
+library(rgbif)
+library(future)
+library(furrr)
+library(ggh4x)
+```
+
+Get models:
+
+```{r get-models}
+models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+  fill(everything(), .direction = "down") %>%
+  filter(`R?` == "✓") %>%
+  pull(ID)
+```
+
+Set up parallel processing:
+
+```{r setup-parallel}
+plan(multisession, workers = floor(parallel::detectCores() * 0.75))
+# plan(sequential)
+```
+
+Set key parameters:
+
+```{r overwrite}
+overwrite <- FALSE
+```
+
+```{r parameters}
+alpha <- 0.05
+
+init_time <- 1928 # Year before first records
+last_time <- 2017 # End of Butchart et al. dataset
+curr_time <- 2026 # Current year
+
+certainty_threshold <- 0.7 # NB: non-standard!
+```
+
+Set up functions for models:
+
+```{r model-functions}
+run_model <- function(model, records, surveys, effort, alpha, test_time) {
+  out <- switch(model,
+    "SL88F1" = SL88F1(records = records$ccon, alpha = alpha),
+    "SS89F1" = SS89F1(records = records$ccon, alpha = alpha),
+    "SS89B1" = SS89B1(
+      records = records$ccon, alpha = alpha, length.out = 1e4,
+      scale = 0.01
+    ),
+    "SO93F1" = SO93F1(
+      records = records$ccon, alpha = alpha, init.time = init_time,
+      test.time = test_time
+    ),
+    "SO93B1" = SO93B1(
+      records = records$ccon, init.time = init_time,
+      test.time = test_time, pi = 0.5
+    ),
+    "SO93F2" = SO93F2(
+      records = records$ccon, alpha = alpha, init.time = init_time,
+      test.time = test_time, precBits = 1024
+    ),
+    "MA94F1" = MA94F1(records = records$ccon, alpha = alpha, gamma = 0.5),
+    "BU95F1" = BU95F1(records = records$cdis),
+    "BU95F2" = BU95F2(records = records$cdis),
+    "BU95F3" = BU95F3(records = records$cdis),
+    "MA97F1" = MA97F1(
+      records = records$cdis, effort = effort, alpha = alpha,
+      init.time = init_time
+    ),
+    "MC98F1" = MC98F1(records = records$cdis, effort = effort),
+    "MC99F1" = MC99F1(
+      records = records$ccon, alpha = alpha,
+      test.time = test_time
+    ),
+    "WM99B1" = WM99B1(
+      records = records$cbin, surveys = init_time:test_time,
+      alpha = alpha, test.time = test_time, priors = list(
+        lambda = 1e3, c = 1, d = 1
+      ), increment = 0.01
+    ),
+    "RS03F1" = RS03F1(
+      records = records$ccon, alpha = alpha,
+      conf.int = "one-sided", k = ifelse(length(
+        records$ccon
+      ) >= 10, 10, length(records$ccon)),
+      test.time = test_time
+    ),
+    "SR03F1" = SR03F1(
+      records = records$ccon, alpha = alpha,
+      test.time = test_time
+    ),
+    "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = init_time),
+    "RO09B1" = RO09B1(
+      records = records$cbin, pi = 0.5, n.chains = 1,
+      n.iter = 11e3, n.burnin = 1e3
+    ),
+    "JE10F1" = JE10F1(
+      records = records$ccon, alpha = alpha, init.time = init_time,
+      test.time = test_time
+    ),
+    "JE10F2" = JE10F2(
+      records = records$ccon, alpha = alpha, init.time = init_time,
+      test.time = test_time
+    ),
+    "BR12F1" = BR12F1(records = records$ccon, alpha = alpha),
+    "SO12B1" = SO12B1(
+      records = records$ubin, init.time = init_time, increment = 0.001,
+      gamma = 1, record.check = "error"
+    ),
+    "TH13B1" = TH13B1(
+      records = records$umcb,
+      priors = list(
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), 0.5, simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
+        ),
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) 1 else 0.5
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
+        )
+      ),
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL
+    ),
+    "TH13B2" = TH13B2(
+      records = records$umcb,
+      priors = list(
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), c(0, 1), simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
+        ),
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) c(1, 1) else c(0, 1)
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
+        )
+      ),
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+    ),
+    "TH13B3" = TH13B3(
+      records = records$umcb,
+      priors = list(
+        p = setNames(
+          replicate(length(grep(
+            "^records_", names(records$umcb)
+          )), c(0, 1), simplify = FALSE),
+          paste0("p", seq_len(length(grep("^records_", names(records$umcb)))))
+        ),
+        q = setNames(
+          lapply(as.numeric(sub("^records_", "", grep(
+            "^records_", names(records$umcb),
+            value = TRUE
+          ))), function(x) {
+            if (x >= certainty_threshold) c(1, 1) else c(0, 1)
+          }),
+          paste0("q", seq_len(length(grep("^records_", names(records$umcb)))))
+        )
+      ),
+      certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
+        records$umcb
+      ), value = TRUE))) >= certainty_threshold),
+      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+    ),
+    "AL14B1" = AL14B1(records = records$cbin),
+    "CB14B1" = CB14B1(
+      records = records$cbin, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "CB14B2" = CB14B2(
+      records = records$cbin, alpha = alpha, init.time = init_time,
+      test.time = test_time, burn.in = 1e3, n.iter = 11e3
+    ),
+    "JR14F1" = JR14F1(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time
+    ),
+    "LE14B1" = LE14B1(
+      records = records$iucn, surveys = surveys,
+      threshold = 0.9, prior = c(0, 1), n.iter = 10e3
+    ),
+    "LE14B2" = LE14B2(
+      records = records$ubin, alpha = alpha, init.time = init_time,
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "SB14B1" = SB14B1(records = records$ubin, init.time = init_time, increment = 0.001),
+    "SB14B2" = SB14B2(records = records$ubin, init.time = init_time, increment = 0.001),
+    "AL15B1" = AL15B1(records = records$cbin),
+    "SO16B1" = SO16B1(
+      records = records$cbin, init.time = NULL,
+      test.time = NULL, curr.time = NULL
+    ),
+    "SO16B2" = SO16B2(
+      records = records$cbin, init.time = NULL,
+      test.time = NULL, curr.time = NULL
+    ),
+    "WA16B1" = WA16B1(
+      records = records$ccon, alpha = alpha, init.time = init_time
+    ),
+    "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
+    "BR19F1" = BR19F1(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "BR19F2" = BR19F2(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "BR19F3" = BR19F3(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "BR19F4" = BR19F4(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "BR19F5" = BR19F5(
+      records = records$ucon, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.iter = 10e3
+    ),
+    "TH19B1" = TH19B1(
+      records = records$iucn, surveys = surveys,
+      init.time = max(records$ccon) + 1, test.time = test_time,
+      pi = 0.5
+    ),
+    "KO20B1" = KO20B1(
+      records = records$cbin, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.chains = 1, n.iter = 11e3,
+      n.burnin = 1e3, n.thin = 10
+    ),
+    "KO20B2" = KO20B2(
+      records = records$ubin, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.chains = 1, n.iter = 11e3,
+      n.burnin = 1e3, n.thin = 10
+    ),
+    "KO21B1" = KO21B1(
+      records = records$ubin, alpha = alpha, init.time = init_time,
+      test.time = test_time, n.chains = 1, n.iter = 11e3,
+      n.burnin = 1e3, n.thin = 10
+    ),
+  )
+
+  if (is.null(out)) {
+    stop("Unknown model name: ", model)
+  }
+
+  return(out)
+}
+
+test_model <- function(model, output, alpha, test_time) {
+  out <- switch(model,
+    "SL88F1" = output$conf.int[2] < test_time,
+    "SS89F1" = output$conf.int[2] < test_time,
+    "SS89B1" = output$cred.int[2] < test_time,
+    "SO93F1" = output$p.value < alpha,
+    "SO93B1" = output$p.extant < alpha,
+    "SO93F2" = output$p.value < alpha,
+    "MA94F1" = output$conf.int[3] < test_time,
+    "BU95F1" = output$p.value < alpha,
+    "BU95F2" = output$p.value < alpha,
+    "BU95F3" = output$p.value < alpha,
+    "MA97F1" = output$conf.int[2] < test_time,
+    "MC98F1" = output$p.value < alpha,
+    "MC99F1" = output$p.value < alpha,
+    "WM99B1" = output$p.extant < alpha,
+    "RS03F1" = output$p.value < alpha,
+    "SR03F1" = output$p.value < alpha,
+    "MC06F1" = output$p.value < alpha,
+    "RO09B1" = output$p.extant < alpha,
+    "JE10F1" = output$p.value < alpha,
+    "JE10F2" = output$p.value < alpha,
+    "BR12F1" = output$estimate < test_time,
+    "SO12B1" = output$Bayes.factor > (1 / alpha),
+    "TH13B1" = output$p.extant < alpha,
+    "TH13B2" = output$p.extant < alpha,
+    "TH13B3" = output$p.extant < alpha,
+    "AL14B1" = output$p.extant < alpha,
+    "CB14B1" = output$p.extant < alpha,
+    "CB14B2" = output$p.extant < alpha,
+    "JR14F1" = output$p.value < alpha,
+    "LE14B1" = output$p.extant < alpha,
+    "LE14B2" = output$p.extant < alpha,
+    "SB14B1" = output$Bayes.factor > (1 / alpha),
+    "SB14B2" = output$Bayes.factor > (1 / alpha),
+    "AL15B1" = output$p.extant < alpha,
+    "SO16B1" = output$p.extant < alpha,
+    "SO16B2" = output$p.extant < alpha,
+    "WA16B1" = output$cred.int[2] < test_time,
+    "TH17I1" = output$p.extant < alpha,
+    "BR19F1" = output$p.extant < alpha,
+    "BR19F2" = output$p.extant < alpha,
+    "BR19F3" = output$p.extant < alpha,
+    "BR19F4" = output$p.extant < alpha,
+    "BR19F5" = output$p.extant < alpha,
+    "TH19B1" = output$p.extant < alpha,
+    "KO20B1" = output$p.extant < alpha,
+    "KO20B2" = output$p.extant < alpha,
+    "KO21B1" = output$p.extant < alpha,
+  )
+
+  if (is.null(out)) {
+    stop("Unknown model name: ", model)
+  }
+
+  return(out)
+}
+```
+
+Set up output directory:
+
+```{r directory}
+dir.create(file.path("Outputs", "Alaotra Grebe"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+```
+
+# Data
+
+Read in and process records datasheet from Butchart et al.:
+
+```{r records}
+records_raw <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 1, range = "A1:E13"
+) %>%
+  select(
+    year = "Year",
+    p_ci_min = "P(CI) Lower",
+    p_ci = "P(CI) Est",
+    p_ci_max = "P(CI) Upper"
+  ) %>%
+  filter(
+    year >= init_time,
+    year <= last_time
+  ) %>%
+  as.data.frame()
+
+lost_time <- records_raw %>%
+  filter(
+    p_ci >= certainty_threshold, # Confirmed records
+  ) %>%
+  pull(year) %>%
+  max()
+
+test_times <- lost_time:curr_time
+grid <- expand.grid(test_time = test_times)
+
+records_full <- convert_dodo(records_raw,
+  init.time = init_time, test.time = curr_time,
+  threshold = certainty_threshold, unique = FALSE,
+  aggregate = "max", time = "year", certainty = "p_ci",
+  certainty_lower = "p_ci_min", certainty_upper = "p_ci_max"
+)
+```
+
+Read in and process survey datasheet:
+
+```{r surveys}
+surveys_raw_active <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 2, range = "A1:J13"
+) %>%
+  mutate(survey = TRUE) %>%
+  select(
+    time = "Year",
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
+  )
+
+surveys_raw_passive <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 2, range = "O1:X2"
+) %>%
+  mutate(survey = FALSE) %>%
+  select(
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
+  ) %>%
+  expand_grid(
+    tibble(time = init_time:curr_time) %>%
+      filter_out(time %in% surveys_raw_active$time),
+    .
+  )
+
+surveys_full <- bind_rows(surveys_raw_active, surveys_raw_passive) %>%
+  arrange(time) %>%
+  as.data.frame()
+```
+
+Create or read in effort proxy:
+
+```{r effort, message=FALSE, warning=FALSE}
+core_countries <- "MG"
+
+if (!file.exists("Outputs/Alaotra Grebe/effort_full.rds") | overwrite) {
+  effort_raw <- tibble(
+    year = integer(),
+    country = character(),
+    species = character()
+  )
+
+  for (country in core_countries) {
+    for (year in init_time:curr_time) {
+      species_list <- occ_search(
+        taxonKey = 212, # Birds
+        country = country,
+        year = year,
+        facet = "speciesKey",
+        facetLimit = 10000,
+        limit = 0 # Just get facets, no occurrences
+      )$facets$speciesKey$name
+
+      species_list <- tibble(
+        year = year,
+        country = country,
+        species = species_list
+      )
+
+      effort_raw <- bind_rows(effort_raw, species_list)
+
+      Sys.sleep(0.1)
+    }
+  }
+
+  effort_full <- effort_raw %>%
+    drop_na(species) %>%
+    group_by(year) %>%
+    summarise(n_species = n_distinct(species)) %>%
+    left_join(tibble(year = init_time:curr_time), ., by = "year") %>%
+    mutate(n_species = replace_na(n_species, 0)) %>%
+    pull(n_species)
+} else {
+  effort_full <- readRDS("Outputs/Alaotra Grebe/effort_full.rds")
+}
+```
+
+Save full processed datasets:
+
+```{r save-data}
+saveRDS(records_full, "Outputs/Alaotra Grebe/records_full.rds")
+saveRDS(surveys_full, "Outputs/Alaotra Grebe/surveys_full.rds")
+saveRDS(effort_full, "Outputs/Alaotra Grebe/effort_full.rds")
+```
+
+# Run
+
+```{r}
+set.seed(1234)
+```
+
+Run models:
+
+```{r run-models}
+if (file.exists("Outputs/Alaotra Grebe/model_times.rds")) {
+  model_times <- readRDS("Outputs/Alaotra Grebe/model_times.rds")
+} else {
+  model_times <- tibble(
+    model = character(), run_time = numeric(),
+    end_time = POSIXct()
+  )
+}
+
+for (model in models) {
+  model_start <- Sys.time()
+  model_ran <- FALSE
+
+  model_file <- file.path("Outputs", "Alaotra Grebe", paste0(model, ".rds"))
+
+  valid_file <- FALSE
+  if (file.exists(model_file)) {
+    check <- readRDS(model_file)
+    if (!is.null(check$results) && nrow(check$results) == nrow(grid)) {
+      valid_file <- TRUE
+    }
+    rm(check)
+  }
+
+  if (!valid_file || overwrite == TRUE) {
+    model_ran <- TRUE
+
+    results <- future_map(seq_len(nrow(grid)), function(idx) {
+      test_time <- grid$test_time[idx]
+
+      records <- convert_dodo(records_raw,
+        init.time = init_time,
+        test.time = test_time, threshold = certainty_threshold, unique = FALSE,
+        aggregate = "max", time = "year", certainty = "p_ci",
+        certainty_lower = "p_ci_min", certainty_upper = "p_ci_max"
+      )
+      surveys <- surveys_full %>%
+        filter(time <= test_time)
+      effort <- effort_full[1:(test_time - init_time + 1)]
+
+      iteration_start <- Sys.time()
+
+      warning_msg <- character()
+      error_msg <- NA_character_
+
+      output <- tryCatch(
+        withCallingHandlers(
+          run_model(
+            model = model, records = records, surveys = surveys,
+            effort = effort, alpha = alpha, test_time = test_time
+          ),
+          warning = function(w) {
+            warning_msg <<- c(warning_msg, conditionMessage(w))
+            invokeRestart("muffleWarning")
+          }
+        ),
+        error = function(e) {
+          error_msg <<- conditionMessage(e)
+          NULL
+        }
+      )
+
+      i_time <- difftime(Sys.time(), iteration_start, units = "secs") %>%
+        as.numeric()
+
+      result <- if (is.null(output)) {
+        tibble(
+          model = model, test_time = test_time,
+          last_time = max(records$ccon), isextinct = NA, output = NA,
+          warning = length(warning_msg) > 0, error = TRUE,
+          warning_msg = if (length(warning_msg) > 0) {
+            paste(unique(warning_msg), collapse = " | ")
+          } else {
+            NA_character_
+          },
+          error_msg = if (length(error_msg) > 0) {
+            paste(unique(error_msg), collapse = " | ")
+          } else {
+            NA_character_
+          }, run_time = i_time, end_time = Sys.time()
+        )
+      } else {
+        tibble(
+          model = model, test_time = test_time,
+          last_time = max(records$ccon), isextinct = test_model(
+            model, output, alpha, test_time
+          ), output = list(output),
+          warning = length(warning_msg) > 0, error = FALSE,
+          warning_msg = if (length(warning_msg) > 0) {
+            paste(unique(warning_msg), collapse = " | ")
+          } else {
+            NA_character_
+          },
+          error_msg = NA_character_, run_time = i_time, end_time = Sys.time()
+        )
+      }
+
+      rm(output)
+      gc()
+
+      return(result)
+    }, .options = furrr_options(seed = TRUE))
+
+    all_results <- bind_rows(results)
+
+    saveRDS(list(model = model, results = all_results), model_file)
+  }
+
+  if (model_ran == TRUE) {
+    m_time <- as.numeric(difftime(Sys.time(), model_start, units = "secs"))
+
+    model_times <- model_times %>%
+      filter(model != !!model) %>%
+      bind_rows(tibble(
+        model = model, run_time = m_time,
+        end_time = Sys.time()
+      ))
+  }
+
+  gc()
+}
+
+saveRDS(model_times, "Outputs/Alaotra Grebe/model_times.rds")
+```
+
+# Finish
+
+Results:
+
+```{r results}
+model_files <- list.files("Outputs/Alaotra Grebe", pattern = "\\.rds$", full.names = TRUE)
+model_files <- model_files[!grepl("model_times\\.rds$", model_files)]
+model_files <- model_files[!grepl("records_full\\.rds$", model_files)]
+model_files <- model_files[!grepl("surveys_full\\.rds$", model_files)]
+model_files <- model_files[!grepl("effort_full\\.rds$", model_files)]
+
+all_results <- map_dfr(model_files, function(model_file) {
+  results_file <- readRDS(model_file)
+
+  if (!is.null(results_file$results)) {
+    results_file$results
+  } else {
+    warning("No results in ", basename(model_file))
+    NULL
+  }
+})
+
+model_times <- readRDS("Outputs/Alaotra Grebe/model_times.rds")
+total_time <- sum(model_times$run_time) / 60
+cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
+```
+
+# Runtime
+
+```{r runtime}
+#| fig-dpi: 300
+#| fig-width: 8
+#| fig-height: 4
+ggplot(model_times) +
+  geom_col(
+    aes(x = factor(model, levels = models), y = run_time / 60)
+  ) +
+  labs(x = "Model", y = "Total Runtime (min)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(
+    angle = 90, vjust = 0.5, hjust = 1, family = "mono", face = "bold"
+  ))
+```
+
+# Summary
+
+```{r summary}
+#| fig-dpi: 600
+#| fig-width: 3
+#| fig-height: 3
+models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+  fill(everything(), .direction = "down") %>%
+  pull(ID)
+
+all_results <- all_results %>%
+  mutate(model = factor(model, levels = models))
+
+excluded <- all_results %>%
+  left_join(tibble(model = models), ., by = "model") %>%
+  filter(is.na(isextinct)) %>%
+  select(model) %>%
+  unique() %>%
+  mutate(model = factor(model, levels = models))
+
+all_results <- all_results %>%
+  filter_out(model %in% excluded$model) %>%
+  mutate(model = factor(model, levels = models))
+
+cat("Excluded (NA outputs):", as.character(excluded$model))
+
+summary_plot <- all_results %>%
+  group_by(test_time) %>%
+  summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>%
+  ggplot() +
+  geom_point(aes(x = test_time, y = extinct_count)) +
+  geom_line(aes(x = test_time, y = extinct_count), linewidth = 1) +
+  geom_hline(
+    yintercept = length(models) - nrow(excluded),
+    linetype = "dashed", linewidth = 1
+  ) +
+  theme_classic() +
+  labs(
+    x = "Test Time",
+    y = "Number of Models Inferring Extinction",
+    title = "Alaotra Grebe"
+  )
+
+saveRDS(summary_plot, "Outputs/Alaotra Grebe/summary_plot.rds")
+summary_plot
+
+results_plot <- ggplot() +
+  geom_point(
+    data = all_results,
+    aes(x = test_time, y = as.integer(isextinct))
+  ) +
+  geom_line(
+    data = all_results,
+    aes(x = test_time, y = as.integer(isextinct)), linewidth = 1
+  ) +
+  geom_label(
+    data = excluded,
+    label = "Excluded", x = (lost_time + curr_time) / 2,
+    y = 0.5, fontface = "italic"
+  ) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(family = "mono", face = "bold")
+  ) +
+  labs(
+    x = "Test Time",
+    y = "Extinct (1) / Extant (0)"
+  )
+```
+
+```{r summary-portrait}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 12
+results_plot +
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 6, nrow = 8,
+    axes = "all", remove_labels = "all"
+  )
+```
+
+```{r summary-landscape}
+#| fig-dpi: 600
+#| fig-width: 12
+#| fig-height: 6
+results_plot +
+  facet_wrap2(~model,
+    drop = FALSE, ncol = 8, nrow = 6,
+    axes = "all", remove_labels = "all"
+  )
+```
+
+```{r summary-models}
+last_extinct <- all_results %>%
+  filter(test_time == .env$last_time)
+
+cat("Extinction inference at end of original dataset:")
+last_extinct %>%
+  group_by(isextinct) %>%
+  tally()
+
+curr_extinct <- all_results %>%
+  filter(test_time == max(test_time))
+
+cat("Extinction inference in final year:")
+curr_extinct %>%
+  group_by(isextinct) %>%
+  tally()
+
+estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
+  sheet = 2, range = "D2:T50"
+) %>%
+  fill(everything(), .direction = "down") %>%
+  filter(
+    ID %in% (curr_extinct %>%
+      filter(isextinct == TRUE) %>%
+      pull(model)),
+    `Est.` == "✓"
+  ) %>%
+  pull(ID)
+
+curr_estimate <- curr_extinct %>%
+  filter(model %in% estimate_models, !is.na(isextinct)) %>%
+  mutate(estimate = purrr::map(output, "estimate")) %>%
+  pull(estimate) %>%
+  as.numeric()
+
+cat("Estimated extinction times:")
+length(curr_estimate)
+summary(curr_estimate)
+
+interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
+  sheet = 2, range = "D2:T50"
+) %>%
+  fill(everything(), .direction = "down") %>%
+  filter(
+    ID %in% (curr_extinct %>%
+      filter(isextinct == TRUE) %>%
+      pull(model)),
+    `Int.` == "✓"
+  ) %>%
+  pull(ID)
+
+curr_interval <- curr_extinct %>%
+  filter(model %in% interval_models, !is.na(isextinct)) %>%
+  mutate(interval = purrr::map(output, ~ .x$cred.int %||% .x$conf.int)) %>%
+  pull(interval) %>%
+  purrr::map_dbl(2) %>%
+  as.numeric()
+
+cat("Estimated upper interval bounds:")
+length(curr_interval)
+summary(curr_interval)
+```

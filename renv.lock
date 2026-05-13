@@ -1859,7 +1859,7 @@
     },
     "dodo": {
       "Package": "dodo",
-      "Version": "1.15.2",
+      "Version": "1.15.5",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Extinction Models in R",
@@ -1893,7 +1893,7 @@
       "RemoteUsername": "Louis-Backstrom",
       "RemoteRepo": "dodo",
       "RemoteRef": "main",
-      "RemoteSha": "74a197d869e2aa2e192c6da342e8e83f6142fb87"
+      "RemoteSha": "f09551884ecaa32e16d13b8047093a6c6e57ba4e"
     },
     "dplyr": {
       "Package": "dplyr",

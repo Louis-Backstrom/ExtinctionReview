@@ -23,8 +23,8 @@ library(ggpubr)
 Load in plots from example species case studies:
 
 ```{r load-results}
-owl_plot <- readRDS("Outputs/Laughing Owl/summary_plot.rds")
-courser_plot <- readRDS("Outputs/Jerdon's Courser/summary_plot.rds")
+grebe_plot <- readRDS("Outputs/Alaotra Grebe/summary_plot.rds")
+owlet_plot <- readRDS("Outputs/Forest Owlet/summary_plot.rds")
 curlew_plot <- readRDS("Outputs/Slender-billed Curlew/summary_plot.rds")
 ```
 
@@ -36,5 +36,5 @@ Combine plots:
 #| fig-dpi: 600
 #| fig-width: 9
 #| fig-height: 3
-ggarrange(owl_plot, courser_plot, curlew_plot, ncol = 3)
+ggarrange(grebe_plot, owlet_plot, curlew_plot, ncol = 3)
 ```
