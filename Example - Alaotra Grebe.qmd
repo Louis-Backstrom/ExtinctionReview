@@ -1,5 +1,5 @@
 ---
-title: "Forest Owlet | Extant"
+title: "Example | Alaotra Grebe"
 format: 
   html:
     toc: true
@@ -61,11 +61,11 @@ overwrite <- FALSE
 ```{r parameters}
 alpha <- 0.05
 
-init_time <- 1871 # Year before first records
-last_time <- 1996 # Year before rediscovery
+init_time <- 1928 # Year before first records
+last_time <- 2017 # End of Butchart et al. dataset
 curr_time <- 2026 # Current year
 
-certainty_threshold <- 0.9
+certainty_threshold <- 0.7 # NB: non-standard!
 ```
 
 Set up functions for models:
@@ -358,7 +358,7 @@ test_model <- function(model, output, alpha, test_time) {
 Set up output directory:
 
 ```{r directory}
-dir.create(file.path("Outputs", "Forest Owlet"),
+dir.create(file.path("Outputs", "Alaotra Grebe"),
   recursive = TRUE,
   showWarnings = FALSE
 )
@@ -366,27 +366,26 @@ dir.create(file.path("Outputs", "Forest Owlet"),
 
 # Data
 
-Read in and process records datasheet adapted from King & Rasmussen:
+Read in and process records datasheet from Butchart et al.:
 
 ```{r records}
-records_raw <- read_xlsx("Data/Forest Owlet_v1.xlsx",
-  sheet = 2, range = "A9:D43"
+records_raw <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 1, range = "A1:E13"
 ) %>%
   select(
-    year,
-    p_ci_min = "pci_lower",
-    p_ci = "pci_best",
-    p_ci_max = "pci_upper"
+    year = "Year",
+    p_ci_min = "P(CI) Lower",
+    p_ci = "P(CI) Est",
+    p_ci_max = "P(CI) Upper"
   ) %>%
   filter(
     year >= init_time,
-    year <= curr_time
+    year <= last_time
   ) %>%
   as.data.frame()
 
 lost_time <- records_raw %>%
   filter(
-    year <= last_time,
     p_ci >= certainty_threshold, # Confirmed records
   ) %>%
   pull(year) %>%
@@ -406,39 +405,39 @@ records_full <- convert_dodo(records_raw,
 Read in and process survey datasheet:
 
 ```{r surveys}
-surveys_raw_active <- read_xlsx("Data/Forest Owlet_v1.xlsx",
-  sheet = 3, range = "A14:J16"
+surveys_raw_active <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 2, range = "A1:J13"
 ) %>%
   mutate(survey = TRUE) %>%
   select(
-    time = year,
-    survey = survey,
-    epsilon = eps_best,
-    epsilon_lower = eps_lower,
-    epsilon_upper = eps_upper,
-    p_i = pi_best,
-    p_i_lower = pi_lower,
-    p_i_upper = pi_upper,
-    p_r = pr_best,
-    p_r_lower = pr_lower,
-    p_r_upper = pr_upper
+    time = "Year",
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
   )
 
-surveys_raw_passive <- read_xlsx("Data/Forest Owlet_v1.xlsx",
-  sheet = 3, range = "B11:J12"
+surveys_raw_passive <- read_xlsx("Data/Alaotra Grebe from Butchart et al.xlsx",
+  sheet = 2, range = "O1:X2"
 ) %>%
   mutate(survey = FALSE) %>%
   select(
-    survey = survey,
-    epsilon = eps_best,
-    epsilon_lower = eps_lower,
-    epsilon_upper = eps_upper,
-    p_i = pi_best,
-    p_i_lower = pi_lower,
-    p_i_upper = pi_upper,
-    p_r = pr_best,
-    p_r_lower = pr_lower,
-    p_r_upper = pr_upper
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
   ) %>%
   expand_grid(
     tibble(time = init_time:curr_time) %>%
@@ -454,9 +453,9 @@ surveys_full <- bind_rows(surveys_raw_active, surveys_raw_passive) %>%
 Create or read in effort proxy:
 
 ```{r effort, message=FALSE, warning=FALSE}
-core_countries <- "IN"
+core_countries <- "MG"
 
-if (!file.exists("Outputs/Forest Owlet/effort_full.rds") | overwrite) {
+if (!file.exists("Outputs/Alaotra Grebe/effort_full.rds") | overwrite) {
   effort_raw <- tibble(
     year = integer(),
     country = character(),
@@ -494,16 +493,16 @@ if (!file.exists("Outputs/Forest Owlet/effort_full.rds") | overwrite) {
     mutate(n_species = replace_na(n_species, 0)) %>%
     pull(n_species)
 } else {
-  effort_full <- readRDS("Outputs/Forest Owlet/effort_full.rds")
+  effort_full <- readRDS("Outputs/Alaotra Grebe/effort_full.rds")
 }
 ```
 
 Save full processed datasets:
 
 ```{r save-data}
-saveRDS(records_full, "Outputs/Forest Owlet/records_full.rds")
-saveRDS(surveys_full, "Outputs/Forest Owlet/surveys_full.rds")
-saveRDS(effort_full, "Outputs/Forest Owlet/effort_full.rds")
+saveRDS(records_full, "Outputs/Alaotra Grebe/records_full.rds")
+saveRDS(surveys_full, "Outputs/Alaotra Grebe/surveys_full.rds")
+saveRDS(effort_full, "Outputs/Alaotra Grebe/effort_full.rds")
 ```
 
 # Run
@@ -515,8 +514,8 @@ set.seed(1234)
 Run models:
 
 ```{r run-models}
-if (file.exists("Outputs/Forest Owlet/model_times.rds")) {
-  model_times <- readRDS("Outputs/Forest Owlet/model_times.rds")
+if (file.exists("Outputs/Alaotra Grebe/model_times.rds")) {
+  model_times <- readRDS("Outputs/Alaotra Grebe/model_times.rds")
 } else {
   model_times <- tibble(
     model = character(), run_time = numeric(),
@@ -528,7 +527,7 @@ for (model in models) {
   model_start <- Sys.time()
   model_ran <- FALSE
 
-  model_file <- file.path("Outputs", "Forest Owlet", paste0(model, ".rds"))
+  model_file <- file.path("Outputs", "Alaotra Grebe", paste0(model, ".rds"))
 
   valid_file <- FALSE
   if (file.exists(model_file)) {
@@ -637,7 +636,7 @@ for (model in models) {
   gc()
 }
 
-saveRDS(model_times, "Outputs/Forest Owlet/model_times.rds")
+saveRDS(model_times, "Outputs/Alaotra Grebe/model_times.rds")
 ```
 
 # Finish
@@ -645,7 +644,7 @@ saveRDS(model_times, "Outputs/Forest Owlet/model_times.rds")
 Results:
 
 ```{r results}
-model_files <- list.files("Outputs/Forest Owlet", pattern = "\\.rds$", full.names = TRUE)
+model_files <- list.files("Outputs/Alaotra Grebe", pattern = "\\.rds$", full.names = TRUE)
 model_files <- model_files[!grepl("model_times\\.rds$", model_files)]
 model_files <- model_files[!grepl("records_full\\.rds$", model_files)]
 model_files <- model_files[!grepl("surveys_full\\.rds$", model_files)]
@@ -662,7 +661,7 @@ all_results <- map_dfr(model_files, function(model_file) {
   }
 })
 
-model_times <- readRDS("Outputs/Forest Owlet/model_times.rds")
+model_times <- readRDS("Outputs/Alaotra Grebe/model_times.rds")
 total_time <- sum(model_times$run_time) / 60
 cat(sprintf("Total model execution time: %.2f minutes\n", total_time))
 ```
@@ -724,10 +723,10 @@ summary_plot <- all_results %>%
   labs(
     x = "Test Time",
     y = "Number of Models Inferring Extinction",
-    title = "Forest Owlet"
+    title = "Alaotra Grebe"
   )
 
-saveRDS(summary_plot, "Outputs/Forest Owlet/summary_plot.rds")
+saveRDS(summary_plot, "Outputs/Alaotra Grebe/summary_plot.rds")
 summary_plot
 
 results_plot <- ggplot() +
@@ -781,8 +780,16 @@ results_plot +
 last_extinct <- all_results %>%
   filter(test_time == .env$last_time)
 
-cat("Extinction inference in the year prior to rediscovery:")
+cat("Extinction inference at end of original dataset:")
 last_extinct %>%
+  group_by(isextinct) %>%
+  tally()
+
+curr_extinct <- all_results %>%
+  filter(test_time == max(test_time))
+
+cat("Extinction inference in final year:")
+curr_extinct %>%
   group_by(isextinct) %>%
   tally()
 
@@ -791,36 +798,36 @@ estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
 ) %>%
   fill(everything(), .direction = "down") %>%
   filter(
-    ID %in% (last_extinct %>%
+    ID %in% (curr_extinct %>%
       filter(isextinct == TRUE) %>%
       pull(model)),
     `Est.` == "✓"
   ) %>%
   pull(ID)
 
-last_estimate <- last_extinct %>%
+curr_estimate <- curr_extinct %>%
   filter(model %in% estimate_models, !is.na(isextinct)) %>%
   mutate(estimate = purrr::map(output, "estimate")) %>%
   pull(estimate) %>%
   as.numeric()
 
 cat("Estimated extinction times:")
-length(last_estimate)
-summary(last_estimate)
+length(curr_estimate)
+summary(curr_estimate)
 
 interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
   sheet = 2, range = "D2:T50"
 ) %>%
   fill(everything(), .direction = "down") %>%
   filter(
-    ID %in% (last_extinct %>%
+    ID %in% (curr_extinct %>%
       filter(isextinct == TRUE) %>%
       pull(model)),
     `Int.` == "✓"
   ) %>%
   pull(ID)
 
-last_interval <- last_extinct %>%
+curr_interval <- curr_extinct %>%
   filter(model %in% interval_models, !is.na(isextinct)) %>%
   mutate(interval = purrr::map(output, ~ .x$cred.int %||% .x$conf.int)) %>%
   pull(interval) %>%
@@ -828,6 +835,6 @@ last_interval <- last_extinct %>%
   as.numeric()
 
 cat("Estimated upper interval bounds:")
-length(last_interval)
-summary(last_interval)
+length(curr_interval)
+summary(curr_interval)
 ```

@@ -33,7 +33,7 @@ render_safe("D4 - Extinct.qmd")
 render_safe("D - Comparison.qmd")
 
 
-render_safe("Alaotra Grebe - Extinct.qmd")
-render_safe("Forest Owlet - Extant.qmd")
-render_safe("Slender-billed Curlew - Challenge.qmd")
+render_safe("Example - Alaotra Grebe.qmd")
+render_safe("Example - Forest Owlet.qmd")
+render_safe("Example - Slender-billed Curlew.qmd")
 render_safe("Examples - Comparison.qmd")

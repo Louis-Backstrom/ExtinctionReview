@@ -1,5 +1,5 @@
 ---
-title: "Slender-billed Curlew | Challenge"
+title: "Example | Slender-billed Curlew"
 format: 
   html:
     toc: true
