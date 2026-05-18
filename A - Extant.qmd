@@ -603,7 +603,7 @@ for (model_i in unique(all_results$model)) {
     accuracy_model_i$coefficients[2]
 
   if (threshold > extinction_time) {
-    if (threshold > 1e9) {
+    if (threshold > 1e6) {
       threshold <- 0
     } else {
       threshold <- extinction_time

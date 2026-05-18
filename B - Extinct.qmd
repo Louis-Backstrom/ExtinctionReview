@@ -564,7 +564,7 @@ for (i in 1:nrow(accuracy_results)) {
   threshold <- (qlogis(1 - beta) - model$coefficients[1]) /
     model$coefficients[2]
 
-  if (threshold > 1e9 | threshold < 0) {
+  if (threshold > 1e6 | threshold < 0) {
     threshold <- 0
   }
 
