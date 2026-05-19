@@ -37,9 +37,9 @@ library(ggh4x)
 Get models:
 
 ```{r get-models}
-models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
-  filter(`R?` == "✓") %>%
+  filter(`dodo?` == "✓") %>%
   pull(ID)
 ```
 
@@ -549,7 +549,7 @@ ggplot(model_times) +
 # Accuracy
 
 ```{r accuracy}
-models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
 

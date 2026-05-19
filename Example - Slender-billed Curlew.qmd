@@ -39,9 +39,9 @@ library(ggh4x)
 Get models:
 
 ```{r get-models}
-models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
-  filter(`R?` == "✓") %>%
+  filter(`dodo?` == "✓") %>%
   pull(ID)
 ```
 
@@ -688,7 +688,7 @@ ggplot(model_times) +
 #| fig-dpi: 600
 #| fig-width: 3
 #| fig-height: 3
-models <- read_xlsx("Paper/EDE Papers.xlsx", sheet = 2, range = "D2:T50") %>%
+models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   pull(ID)
 
@@ -792,9 +792,7 @@ curr_extinct %>%
   group_by(isextinct) %>%
   tally()
 
-estimate_models <- read_xlsx("Paper/EDE Papers.xlsx",
-  sheet = 2, range = "D2:T50"
-) %>%
+estimate_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   filter(
     ID %in% (curr_extinct %>%
@@ -814,9 +812,7 @@ cat("Estimated extinction times:")
 length(curr_estimate)
 summary(curr_estimate)
 
-interval_models <- read_xlsx("Paper/EDE Papers.xlsx",
-  sheet = 2, range = "D2:T50"
-) %>%
+interval_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   filter(
     ID %in% (curr_extinct %>%

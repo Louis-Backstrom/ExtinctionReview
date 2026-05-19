@@ -2298,9 +2298,9 @@ font-family: inherit;
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;Paper/EDE Papers.xlsx&quot;</span>, <span class="at">sheet =</span> <span class="dv">2</span>, <span class="at">range =</span> <span class="st">&quot;D2:T50&quot;</span>) <span class="sc">%&gt;%</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;EDE Models.xlsx&quot;</span>, <span class="at">range =</span> <span class="st">&quot;B2:R50&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(<span class="fu">everything</span>(), <span class="at">.direction =</span> <span class="st">&quot;down&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">R?</span><span class="st">`</span> <span class="sc">==</span> <span class="st">&quot;✓&quot;</span>, Uncertainty <span class="sc">!=</span> <span class="st">&quot;None&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">dodo?</span><span class="st">`</span> <span class="sc">==</span> <span class="st">&quot;✓&quot;</span>, Uncertainty <span class="sc">!=</span> <span class="st">&quot;None&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ID)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
@@ -2932,7 +2932,7 @@ font-family: inherit;
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;Paper/EDE Papers.xlsx&quot;</span>, <span class="at">sheet =</span> <span class="dv">2</span>, <span class="at">range =</span> <span class="st">&quot;D2:T50&quot;</span>) <span class="sc">%&gt;%</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;EDE Models.xlsx&quot;</span>, <span class="at">range =</span> <span class="st">&quot;B2:R50&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(<span class="fu">everything</span>(), <span class="at">.direction =</span> <span class="st">&quot;down&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Uncertainty <span class="sc">!=</span> <span class="st">&quot;None&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ID)</span>
