@@ -76,7 +76,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     "SL88F1" = SL88F1(records = records$ccon, alpha = alpha),
     "SS89F1" = SS89F1(records = records$ccon, alpha = alpha),
     "SS89B1" = SS89B1(
-      records = records$ccon, alpha = alpha, length.out = 1e4,
+      records = records$ccon, alpha = alpha, length.out = 1e5,
       scale = 0.01
     ),
     "SO93F1" = SO93F1(
@@ -123,8 +123,8 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = init_time),
     "RO09B1" = RO09B1(
-      records = records$cbin, pi = 0.5, n.chains = 1,
-      n.iter = 11e3, n.burnin = 1e3
+      records = records$cbin, pi = 0.5, n.chains = 4,
+      n.iter = 11e4, n.burnin = 1e4
     ),
     "JE10F1" = JE10F1(
       records = records$ccon, alpha = alpha, init.time = init_time,
@@ -185,7 +185,7 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
         records$umcb
       ), value = TRUE))) >= certainty_threshold),
-      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+      PXT = NULL, PE = NULL, n.iter = 10e4, pb = FALSE
     ),
     "TH13B3" = TH13B3(
       records = records$umcb,
@@ -209,16 +209,16 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       certain = which(as.numeric(sub("^records_", "", grep("^records_", names(
         records$umcb
       ), value = TRUE))) >= certainty_threshold),
-      PXT = NULL, PE = NULL, n.iter = 10e3, pb = FALSE
+      PXT = NULL, PE = NULL, n.iter = 10e4, pb = FALSE
     ),
     "AL14B1" = AL14B1(records = records$cbin),
     "CB14B1" = CB14B1(
       records = records$cbin, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "CB14B2" = CB14B2(
       records = records$cbin, alpha = alpha, init.time = init_time,
-      test.time = test_time, burn.in = 1e3, n.iter = 11e3
+      test.time = test_time, burn.in = 1e4, n.iter = 11e4
     ),
     "JR14F1" = JR14F1(
       records = records$ucon, alpha = alpha, init.time = init_time,
@@ -226,11 +226,11 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "LE14B1" = LE14B1(
       records = records$iucn, surveys = surveys,
-      threshold = 0.9, prior = c(0, 1), n.iter = 10e3
+      threshold = certainty_threshold, prior = c(0, 1), n.iter = 10e4
     ),
     "LE14B2" = LE14B2(
       records = records$ubin, alpha = alpha, init.time = init_time,
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+      n.chains = 4, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "SB14B1" = SB14B1(records = records$ubin, init.time = init_time, increment = 0.001),
     "SB14B2" = SB14B2(records = records$ubin, init.time = init_time, increment = 0.001),
@@ -249,23 +249,23 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     "TH17I1" = TH17I1(records = records$iucn, surveys = surveys),
     "BR19F1" = BR19F1(
       records = records$ucon, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "BR19F2" = BR19F2(
       records = records$ucon, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "BR19F3" = BR19F3(
       records = records$ucon, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "BR19F4" = BR19F4(
       records = records$ucon, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "BR19F5" = BR19F5(
       records = records$ucon, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.iter = 10e3
+      test.time = test_time, n.iter = 10e4
     ),
     "TH19B1" = TH19B1(
       records = records$iucn, surveys = surveys,
@@ -274,18 +274,18 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "KO20B1" = KO20B1(
       records = records$cbin, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
+      test.time = test_time, n.chains = 4, n.iter = 11e4,
+      n.burnin = 1e4, n.thin = 10
     ),
     "KO20B2" = KO20B2(
       records = records$ubin, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
+      test.time = test_time, n.chains = 4, n.iter = 11e4,
+      n.burnin = 1e4, n.thin = 10
     ),
     "KO21B1" = KO21B1(
       records = records$ubin, alpha = alpha, init.time = init_time,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
+      test.time = test_time, n.chains = 4, n.iter = 11e4,
+      n.burnin = 1e4, n.thin = 10
     ),
   )
 
@@ -369,7 +369,17 @@ dir.create(file.path("Outputs", "Slender-billed Curlew"),
 Read in and process records datasheet from Buchanan et al.:
 
 ```{r records}
-records_raw <- read_xlsx("Data/ibi13368-sup-0001-tables1.xlsx") %>%
+records_raw <- read_xlsx("Data/Slender-billed Curlew.xlsx",
+  sheet = 1, range = "A1:F1175"
+) %>%
+  select(
+    year = "Year",
+    country = "Country",
+    locality = "Locality",
+    p_ci_min = "P(CI) Lower",
+    p_ci = "P(CI) Est",
+    p_ci_max = "P(CI) Upper"
+  ) %>%
   filter(
     year >= init_time,
     year <= last_time
@@ -397,39 +407,39 @@ records_full <- convert_dodo(records_raw,
 Read in and process survey datasheet:
 
 ```{r surveys}
-surveys_raw_active <- read_xlsx("Data/Numenius tenuirostris.xlsx",
-  sheet = 3, range = "A14:J29"
+surveys_raw_active <- read_xlsx("Data/Slender-billed Curlew.xlsx",
+  sheet = 2, range = "A1:J16"
 ) %>%
   mutate(survey = TRUE) %>%
   select(
-    time = year,
-    survey = survey,
-    epsilon = eps_best,
-    epsilon_lower = eps_lower,
-    epsilon_upper = eps_upper,
-    p_i = pi_best,
-    p_i_lower = pi_lower,
-    p_i_upper = pi_upper,
-    p_r = pr_best,
-    p_r_lower = pr_lower,
-    p_r_upper = pr_upper
+    time = "Year",
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
   )
 
-surveys_raw_passive <- read_xlsx("Data/Numenius tenuirostris.xlsx",
-  sheet = 3, range = "B11:J12"
+surveys_raw_passive <- read_xlsx("Data/Slender-billed Curlew.xlsx",
+  sheet = 2, range = "O1:X2"
 ) %>%
   mutate(survey = FALSE) %>%
   select(
-    survey = survey,
-    epsilon = eps_best,
-    epsilon_lower = eps_lower,
-    epsilon_upper = eps_upper,
-    p_i = pi_best,
-    p_i_lower = pi_lower,
-    p_i_upper = pi_upper,
-    p_r = pr_best,
-    p_r_lower = pr_lower,
-    p_r_upper = pr_upper
+    survey = "survey",
+    epsilon = "EPS Est",
+    epsilon_lower = "EPS Lower",
+    epsilon_upper = "EPS Upper",
+    p_i = "PI Est",
+    p_i_lower = "PI Lower",
+    p_i_upper = "PI Upper",
+    p_r = "PR Est",
+    p_r_lower = "PR Lower",
+    p_r_upper = "PR Upper"
   ) %>%
   expand_grid(
     tibble(time = init_time:curr_time) %>%
@@ -702,13 +712,13 @@ excluded <- all_results %>%
   unique() %>%
   mutate(model = factor(model, levels = models))
 
-all_results <- all_results %>%
+inc_results <- all_results %>%
   filter_out(model %in% excluded$model) %>%
   mutate(model = factor(model, levels = models))
 
 cat("Excluded (NA outputs):", as.character(excluded$model))
 
-summary_plot <- all_results %>%
+summary_plot <- inc_results %>%
   group_by(test_time) %>%
   summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>%
   ggplot() +
@@ -730,11 +740,11 @@ summary_plot
 
 results_plot <- ggplot() +
   geom_point(
-    data = all_results,
+    data = inc_results,
     aes(x = test_time, y = as.integer(isextinct))
   ) +
   geom_line(
-    data = all_results,
+    data = inc_results,
     aes(x = test_time, y = as.integer(isextinct)), linewidth = 1
   ) +
   geom_label(
@@ -776,7 +786,7 @@ results_plot +
 ```
 
 ```{r summary-models}
-last_extinct <- all_results %>%
+last_extinct <- inc_results %>%
   filter(test_time == .env$last_time)
 
 cat("Extinction inference at end of original dataset:")
@@ -784,7 +794,7 @@ last_extinct %>%
   group_by(isextinct) %>%
   tally()
 
-curr_extinct <- all_results %>%
+curr_extinct <- inc_results %>%
   filter(test_time == max(test_time))
 
 cat("Extinction inference in final year:")
@@ -832,4 +842,20 @@ curr_interval <- curr_extinct %>%
 cat("Estimated upper interval bounds:")
 length(curr_interval)
 summary(curr_interval)
+```
+
+# Errors, Warnings, etc.
+
+```{r issues}
+all_results %>%
+  filter(is.na(warning_msg) == FALSE) %>%
+  group_by(model, warning_msg) %>%
+  tally() %>%
+  print(n = Inf)
+
+all_results %>%
+  filter(is.na(error_msg) == FALSE) %>%
+  group_by(model, error_msg) %>%
+  tally() %>%
+  print(n = Inf)
 ```

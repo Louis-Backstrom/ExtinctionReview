@@ -59,9 +59,9 @@ best_models <- scenario_a %>%
 
 saveRDS(best_models, "Outputs/A/best_models.rds")
 
-predictions_extinct <- predictions_extinct %>% 
+predictions_extinct <- predictions_extinct %>%
   mutate(best_model = model %in% best_models)
-predictions_extant <- predictions_extant %>% 
+predictions_extant <- predictions_extant %>%
   mutate(best_model = model %in% best_models)
 
 scenario_a <- scenario_a %>%
@@ -175,5 +175,6 @@ comparison_plot <- ggplot(scenario_a) +
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, comparison_plot, ncol = 3)
+ggsave("Figure1.svg", all_plot, width = 12, height = 4)
 all_plot
 ```

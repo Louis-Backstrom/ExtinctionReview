@@ -121,7 +121,6 @@ C2_plot <- ggplot(C2_joined) +
   theme_classic() +
   theme(legend.position = "none")
 
-
 C3_plot <- ggplot(C3_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3),
@@ -158,5 +157,7 @@ C4_plot <- ggplot(C4_joined) +
   theme_classic() +
   theme(legend.position = "none")
 
-ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
+all_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
+ggsave("Figure3.svg", all_plot, width = 12, height = 3)
+all_plot
 ```
