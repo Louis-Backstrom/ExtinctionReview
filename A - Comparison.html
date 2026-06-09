@@ -2432,7 +2432,7 @@ font-family: inherit;
 <span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="st">&quot;green3&quot;</span>, <span class="at">fill =</span> <span class="cn">NA</span></span>
 <span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
 <span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> threshold, <span class="at">y =</span> error_rate, <span class="at">colour =</span> best_model), </span>
+<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> threshold, <span class="at">y =</span> error_rate, <span class="at">colour =</span> best_model),</span>
 <span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">2</span></span>
 <span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
 <span id="cb9-82"><a href="#cb9-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(</span>
@@ -2440,25 +2440,27 @@ font-family: inherit;
 <span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(extinction_time, extinction_time <span class="sc">*</span> <span class="fl">2.5</span>,</span>
 <span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a>      <span class="at">by =</span> extinction_time <span class="sc">/</span> <span class="dv">2</span></span>
 <span id="cb9-86"><a href="#cb9-86" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="cf">function</span>(x) {x <span class="sc">-</span> test_time},</span>
-<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.1</span>))</span>
-<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
-<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a>    <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
-<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)</span>
-<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;TRUE&quot;</span> <span class="ot">=</span> <span class="st">&quot;green3&quot;</span>, <span class="st">&quot;FALSE&quot;</span> <span class="ot">=</span> <span class="st">&quot;black&quot;</span>)) <span class="sc">+</span></span>
-<span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb9-96"><a href="#cb9-96" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>) <span class="sc">+</span></span>
-<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;C) Comparison between Extinct &amp; Extant&quot;</span>,</span>
-<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">paste0</span>(<span class="st">&quot;Time to Achieve &quot;</span>, (<span class="dv">1</span> <span class="sc">-</span> beta) <span class="sc">*</span> <span class="dv">100</span>, <span class="st">&quot;% Power (After Extinction&quot;</span>),</span>
-<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Type I Error Rate (Test Time = 100)&quot;</span></span>
-<span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a>all_plot <span class="ot">&lt;-</span> <span class="fu">ggarrange</span>(extinct_plot, extant_plot, comparison_plot, <span class="at">ncol =</span> <span class="dv">3</span>)</span>
-<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;Figure1.svg&quot;</span>, all_plot, <span class="at">width =</span> <span class="dv">12</span>, <span class="at">height =</span> <span class="dv">4</span>)</span>
-<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>all_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="cf">function</span>(x) {</span>
+<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a>      x <span class="sc">-</span> test_time</span>
+<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.1</span>))</span>
+<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a>    <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)</span>
+<span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-96"><a href="#cb9-96" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;TRUE&quot;</span> <span class="ot">=</span> <span class="st">&quot;green3&quot;</span>, <span class="st">&quot;FALSE&quot;</span> <span class="ot">=</span> <span class="st">&quot;black&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>) <span class="sc">+</span></span>
+<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;C) Comparison between Extinct &amp; Extant&quot;</span>,</span>
+<span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">paste0</span>(<span class="st">&quot;Time to Achieve &quot;</span>, (<span class="dv">1</span> <span class="sc">-</span> beta) <span class="sc">*</span> <span class="dv">100</span>, <span class="st">&quot;% Power (After Extinction&quot;</span>),</span>
+<span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Type I Error Rate (Test Time = 100)&quot;</span></span>
+<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>all_plot <span class="ot">&lt;-</span> <span class="fu">ggarrange</span>(extinct_plot, extant_plot, comparison_plot, <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;Figure1.svg&quot;</span>, all_plot, <span class="at">width =</span> <span class="dv">12</span>, <span class="at">height =</span> <span class="dv">4</span>)</span>
+<span id="cb9-107"><a href="#cb9-107" aria-hidden="true" tabindex="-1"></a>all_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
