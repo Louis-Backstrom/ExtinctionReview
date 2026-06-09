@@ -66,12 +66,9 @@ extinct_plot <- ggplot() +
     strip.text = element_text(family = "mono", face = "bold")
   ) +
   labs(
-    title = "Extinct",
+    title = "A) Extinct",
     x = paste0("Extinction Time"),
-    y = paste0(
-      "Estimated Time Offset Required for > ",
-      (1 - beta) * 100, "% Power"
-    )
+    y = paste0("Time to Achieve ", (1 - beta) * 100, "% Power")
   )
 
 extant_plot <- ggplot() +
@@ -88,14 +85,17 @@ extant_plot <- ggplot() +
     aes(x = test_time, y = t1_error_rate),
     linewidth = 2
   ) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
-    title = "Extant",
+    title = "B) Extant",
     x = paste0("Duration of Sighting Record"),
-    y = "Observed Type I Error Rate"
+    y = "Type I Error Rate"
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, ncol = 2)

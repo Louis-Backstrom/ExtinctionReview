@@ -723,7 +723,7 @@ summary_plot <- inc_results %>%
   labs(
     x = "Test Time",
     y = "Number of Models Inferring Extinction",
-    title = "Alaotra Grebe"
+    title = "A) Alaotra Grebe"
   )
 
 saveRDS(summary_plot, "Outputs/Alaotra Grebe/summary_plot.rds")

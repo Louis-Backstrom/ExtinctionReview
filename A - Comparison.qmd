@@ -43,6 +43,7 @@ Re-specify relevant parameters used in simulations:
 ```{r parameters}
 extinction_time <- 100
 test_time <- 100
+beta <- 0.2
 ```
 
 # Comparison
@@ -97,19 +98,20 @@ extinct_plot <- ggplot() +
     breaks = seq(extinction_time, extinction_time * 2,
       by = extinction_time / 4
     ),
-    labels = function(x) {
-      paste0(x, " (+", x - test_time, ")")
-    },
     expand = expansion(mult = c(0.05, 0.1))
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
   ) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
-    title = "Extinct",
-    x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated Power"
+    title = "A) Extinct",
+    x = paste0("Test Time (Extinction = ", extinction_time, ")"),
+    y = "Power"
   )
 
 extant_plot <- ggplot() +
@@ -131,19 +133,20 @@ extant_plot <- ggplot() +
     breaks = seq(extinction_time * 0.5, extinction_time,
       by = extinction_time / 10
     ),
-    labels = function(x) {
-      paste0(x, " (-", test_time - x, ")")
-    },
     expand = expansion(mult = c(0.05, 0.1))
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
   ) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
-    title = "Extant",
-    x = paste0("Time of Last Sighting (Test Time at ", test_time, ")"),
-    y = "Estimated Type I Error Rate"
+    title = "B) Extant",
+    x = paste0("Time of Last Sighting (Test Time = ", test_time, ")"),
+    y = "Type I Error Rate"
   )
 
 comparison_plot <- ggplot(scenario_a) +
@@ -153,25 +156,31 @@ comparison_plot <- ggplot(scenario_a) +
     ymin = ideal_errorrate[1], ymax = ideal_errorrate[2],
     colour = "green3", fill = NA
   ) +
-  geom_point(aes(x = threshold, y = error_rate, colour = best_model)) +
+  geom_point(
+    aes(x = threshold, y = error_rate, colour = best_model),
+    size = 2
+  ) +
   scale_x_continuous(
     limits = c(extinction_time, extinction_time * 2.5),
     breaks = seq(extinction_time, extinction_time * 2.5,
       by = extinction_time / 2
     ),
     labels = function(x) {
-      paste0(x, " (+", x - test_time, ")")
+      x - test_time
     },
     expand = expansion(mult = c(0.05, 0.1))
   ) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
-    title = "Comparison between Extinct & Extant",
-    x = paste0("Time to Achieve > 80% Power (Extinct)"),
-    y = "Estimated Type I Error Rate (Extant)"
+    title = "C) Comparison between Extinct & Extant",
+    x = paste0("Time to Achieve ", (1 - beta) * 100, "% Power (After Extinction"),
+    y = "Type I Error Rate (Test Time = 100)"
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, comparison_plot, ncol = 3)

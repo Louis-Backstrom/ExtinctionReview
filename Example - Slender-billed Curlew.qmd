@@ -732,7 +732,7 @@ summary_plot <- inc_results %>%
   labs(
     x = "Test Time",
     y = "Number of Models Inferring Extinction",
-    title = "Slender-billed Curlew"
+    title = "C) Slender-billed Curlew"
   )
 
 saveRDS(summary_plot, "Outputs/Slender-billed Curlew/summary_plot.rds")

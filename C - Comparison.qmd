@@ -91,14 +91,17 @@ max_threshold <- max(
 )
 
 C1_plot <- ggplot(C1_extinct) +
-  geom_point(aes(x = power, y = threshold, colour = best_model)) +
+  geom_point(
+    aes(x = power, y = threshold, colour = best_model),
+    size = 2
+  ) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
-    title = "C1 (Null)"
+    title = "A) Null"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -106,17 +109,25 @@ C1_plot <- ggplot(C1_extinct) +
 C2_plot <- ggplot(C2_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C2, yend = threshold_C2),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C2, y = threshold_C2, colour = best_model)) +
+  geom_point(
+    aes(x = power_C1, y = threshold_C1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = power_C2, y = threshold_C2, colour = best_model),
+    size = 2
+  ) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
-    title = "C2 (Declining Detectability)"
+    title = "B) Declining Detectability"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -124,17 +135,25 @@ C2_plot <- ggplot(C2_joined) +
 C3_plot <- ggplot(C3_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C3, y = threshold_C3, colour = best_model)) +
+  geom_point(
+    aes(x = power_C1, y = threshold_C1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = power_C3, y = threshold_C3, colour = best_model),
+    size = 2
+  ) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
-    title = "C3 (Increasing Survey Effort)"
+    title = "C) Increasing Survey Effort"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -142,17 +161,25 @@ C3_plot <- ggplot(C3_joined) +
 C4_plot <- ggplot(C4_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C4, yend = threshold_C4),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = power_C1, y = threshold_C1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = power_C4, y = threshold_C4, colour = best_model)) +
+  geom_point(
+    aes(x = power_C1, y = threshold_C1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = power_C4, y = threshold_C4, colour = best_model),
+    size = 2
+  ) +
   scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, max_threshold)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
-    title = "C4 (Combined)"
+    title = "D) Combined"
   ) +
   theme_classic() +
   theme(legend.position = "none")

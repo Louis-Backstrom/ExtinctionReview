@@ -724,7 +724,7 @@ summary_plot <- inc_results %>%
   labs(
     x = "Test Time",
     y = "Number of Models Inferring Extinction",
-    title = "Forest Owlet"
+    title = "B) Forest Owlet"
   )
 
 saveRDS(summary_plot, "Outputs/Forest Owlet/summary_plot.rds")

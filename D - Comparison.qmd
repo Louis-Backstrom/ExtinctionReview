@@ -65,15 +65,24 @@ D4_joined <- left_join(
 )
 
 D1_plot <- ggplot(D1_power_summary) +
-  geom_point(aes(x = early, y = later, colour = best_model)) +
+  geom_point(
+    aes(x = early, y = later, colour = best_model),
+    size = 2
+  ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
-    x = "Average Power Early After Extinction",
-    y = "Average Power Later After Extinction",
-    title = "D1 (Null)"
+    x = "Power Early After Extinction",
+    y = "Power Later After Extinction",
+    title = "A) Null"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -81,18 +90,32 @@ D1_plot <- ggplot(D1_power_summary) +
 D2_plot <- ggplot(D2_joined) +
   geom_segment(
     aes(x = early_D1, y = later_D1, xend = early_D2, yend = later_D2),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D2, y = later_D2, colour = best_model)) +
+  geom_point(
+    aes(x = early_D1, y = later_D1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = early_D2, y = later_D2, colour = best_model),
+    size = 2
+  ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
-    x = "Average Power Early After Extinction",
-    y = "Average Power Later After Extinction",
-    title = "D2 (Matched)"
+    x = "Power Early After Extinction",
+    y = "Power Later After Extinction",
+    title = "B) Matched"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -100,18 +123,32 @@ D2_plot <- ggplot(D2_joined) +
 D3_plot <- ggplot(D3_joined) +
   geom_segment(
     aes(x = early_D1, y = later_D1, xend = early_D3, yend = later_D3),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D3, y = later_D3, colour = best_model)) +
+  geom_point(
+    aes(x = early_D1, y = later_D1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = early_D3, y = later_D3, colour = best_model),
+    size = 2
+  ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
-    x = "Average Power Early After Extinction",
-    y = "Average Power Later After Extinction",
-    title = "D3 (Constant)"
+    x = "Power Early After Extinction",
+    y = "Power Later After Extinction",
+    title = "C) Constant"
   ) +
   theme_classic() +
   theme(legend.position = "none")
@@ -119,18 +156,32 @@ D3_plot <- ggplot(D3_joined) +
 D4_plot <- ggplot(D4_joined) +
   geom_segment(
     aes(x = early_D1, y = later_D1, xend = early_D4, yend = later_D4),
-    colour = "grey90", linewidth = 0.25
+    colour = "grey90",
+    linewidth = 0.25
   ) +
-  geom_point(aes(x = early_D1, y = later_D1), colour = "grey90", size = 0.5) +
-  geom_point(aes(x = early_D4, y = later_D4, colour = best_model)) +
+  geom_point(
+    aes(x = early_D1, y = later_D1),
+    colour = "grey90",
+    size = 1
+  ) +
+  geom_point(
+    aes(x = early_D4, y = later_D4, colour = best_model),
+    size = 2
+  ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    breaks = c(0, 0.5, 1)
+  ) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
-    x = "Average Power Early After Extinction",
-    y = "Average Power Later After Extinction",
-    title = "D4 (Increasing)"
+    x = "Power Early After Extinction",
+    y = "Power Later After Extinction",
+    title = "D) Increasing"
   ) +
   theme_classic() +
   theme(legend.position = "none")
