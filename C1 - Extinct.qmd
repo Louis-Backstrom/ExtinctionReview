@@ -698,7 +698,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
-    y = "Estimated Power"
+    y = "Power"
   )
 ```
 
@@ -722,6 +722,10 @@ accuracy_plot +
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
   )
+
+ggsave("FigureS8.svg", width = 12, height = 6, device = function(...) {
+  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
+})
 ```
 
 # Errors, Warnings, etc.
@@ -752,66 +756,24 @@ eps_plot <- ggplot() +
   geom_step(aes(x = seq_along(epss), y = epss), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Epsilon (ε)") +
+  labs(x = "Time", y = "Epsilon (ε)", title = "Null") +
   theme_classic()
 
 pir_plot <- ggplot() +
   geom_step(aes(x = seq_along(pirs), y = pirs), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "p(i) × p(r)") +
+  labs(x = "Time", y = "p(i) × p(r)", title = "") +
   theme_classic()
 
 pse_plot <- ggplot() +
   geom_step(aes(x = seq_along(pse), y = pse), linewidth = 1) +
   geom_vline(xintercept = extinction_time, linetype = "dashed") +
   lims(x = c(0, max(test_times)), y = c(0, 1)) +
-  labs(x = "Time", y = "Sighting Rate") +
+  labs(x = "Time", y = "Sighting Rate", title = "") +
   theme_classic()
 
-ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
-```
-
-Plot sightings:
-
-```{r illustrative-figure}
-#| fig-dpi: 600
-#| fig-width: 8
-#| fig-height: 2
-demo_iterations <- sample(seq_along(rse_data$data), 4, replace = FALSE)
-
-demo_records <- sapply(
-  rse_data$data[demo_iterations],
-  function(x) x$records$ccon
-)
-
-demo_records <- do.call(rbind, lapply(seq_along(demo_records), function(i) {
-  data.frame(x = demo_records[[i]], panel = i)
-}))
-
-demo_test_times <- rse_data %>%
-  filter(row_number() %in% demo_iterations) %>%
-  select(test_time) %>%
-  mutate(panel = row_number())
-
-ggplot(demo_records) +
-  geom_point(aes(x = x, y = 0)) +
-  geom_vline(
-    data = demo_test_times,
-    aes(xintercept = test_time),
-    linetype = "dotted"
-  ) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  facet_wrap(~panel, ncol = 4, nrow = 1, axes = "all", scales = "free_x") +
-  theme_classic() +
-  theme(
-    strip.background = element_blank(),
-    strip.text = element_blank(),
-    panel.spacing = unit(1.0, "lines"),
-    axis.line.y = element_blank()
-  ) +
-  scale_y_continuous(NULL, breaks = NULL) +
-  scale_x_continuous(breaks = seq(0, max(test_times), by = 50)) +
-  expand_limits(x = 0) +
-  labs(x = "Time")
+C1_plot <- ggarrange(eps_plot, pir_plot, pse_plot, ncol = 3, nrow = 1)
+C1_plot
+saveRDS(C1_plot, "Outputs/C1/Extinct/C1_sighting_rates.rds")
 ```

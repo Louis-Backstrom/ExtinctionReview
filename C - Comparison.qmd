@@ -188,3 +188,25 @@ all_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
 ggsave("Figure4.svg", all_plot, width = 12, height = 3)
 all_plot
 ```
+
+# Illustrative Figure
+
+Read in figures from subscenarios:
+
+```{r load-figures}
+C1_plot <- readRDS("Outputs/C1/Extinct/C1_sighting_rates.rds")
+C2_plot <- readRDS("Outputs/C2/Extinct/C2_sighting_rates.rds")
+C3_plot <- readRDS("Outputs/C3/Extinct/C3_sighting_rates.rds")
+C4_plot <- readRDS("Outputs/C4/Extinct/C4_sighting_rates.rds")
+```
+
+Combine and plot:
+
+```{r illustrative-figure}
+#| fig-dpi: 600
+#| fig-width: 12
+#| fig-height: 12
+C_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, nrow = 4)
+C_plot
+ggsave("FigureS2.svg", C_plot, width = 12, height = 12)
+```

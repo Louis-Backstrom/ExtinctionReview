@@ -680,7 +680,7 @@ accuracy_plot <- ggplot() +
   ) +
   labs(
     x = paste0("Time of Last Sighting (Test Time at ", test_time, ")"),
-    y = "Estimated Type I Error Rate"
+    y = "Type I Error Rate"
   )
 ```
 
@@ -704,6 +704,10 @@ accuracy_plot +
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
   )
+
+ggsave("FigureS5.svg", width = 12, height = 6, device = function(...) {
+  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
+})
 ```
 
 # Errors, Warnings, etc.
@@ -720,37 +724,4 @@ all_results %>%
   group_by(model, error_msg) %>%
   tally() %>%
   print(n = Inf)
-```
-
-# Illustrative Figure
-
-```{r illustrative-figure}
-#| fig-dpi: 600
-#| fig-width: 8
-#| fig-height: 2
-demo_iterations <- sample(seq_along(rse_data$data), 4, replace = FALSE)
-
-demo_records <- sapply(
-  rse_data$data[demo_iterations],
-  function(x) x$records$ccon
-)
-
-demo_records <- do.call(rbind, lapply(seq_along(demo_records), function(i) {
-  data.frame(x = demo_records[[i]], panel = i)
-}))
-
-ggplot(demo_records) +
-  geom_point(aes(x = x, y = 0)) +
-  geom_vline(xintercept = extinction_time, linetype = "dashed") +
-  facet_wrap(~panel, ncol = 4, nrow = 1, axes = "all") +
-  theme_classic() +
-  theme(
-    strip.background = element_blank(),
-    strip.text = element_blank(),
-    panel.spacing = unit(1.0, "lines"),
-    axis.line.y = element_blank()
-  ) +
-  scale_y_continuous(NULL, breaks = NULL) +
-  lims(x = c(0, test_time)) +
-  labs(x = "Time")
 ```
