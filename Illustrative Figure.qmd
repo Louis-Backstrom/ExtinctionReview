@@ -107,8 +107,11 @@ A_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario A: Extinct")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "A) A: Extinct")
 ```
 
 ## A Extant
@@ -168,8 +171,11 @@ A_Extant_plot <- ggplot() +
   ) +
   lims(x = c(0, 100), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario A: Extant")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "B) A: Extant")
 ```
 
 ## A All
@@ -244,8 +250,11 @@ B_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(-100, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario B: Extinct")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "C) B: Extinct")
 ```
 
 ## B Extant
@@ -305,8 +314,11 @@ B_Extant_plot <- ggplot() +
   ) +
   lims(x = c(0, 100), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario B: Extant")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "D) B: Extant")
 ```
 
 ## B All
@@ -381,8 +393,11 @@ C1_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario C: Null")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "E) C: Null")
 ```
 
 ## C Declining Detectability
@@ -450,8 +465,11 @@ C2_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario C: Declining Detectability")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "F) C: Declining Detectability")
 ```
 
 ## C Increasing Survey Effort
@@ -519,8 +537,11 @@ C3_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario C: Increasing Survey Effort")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "G) C: Increasing Survey Effort")
 ```
 
 ## C Combined
@@ -588,8 +609,11 @@ C4_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario C: Combined")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "H) C: Combined")
 ```
 
 ## C All
@@ -613,25 +637,25 @@ D1_Extinct_data_2u <- NA
 D1_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.975),
+    aes(xmin = 0, xmax = 200, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.025),
+    aes(xmin = 0, xmax = 200, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.975),
+    aes(xmin = 0, xmax = 200, y = 1.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2.025),
+    aes(xmin = 0, xmax = 200, y = 2.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
@@ -644,39 +668,39 @@ D1_Extinct_plot <- ggplot() +
   ) +
   # Test Times
   geom_linerange(
-    aes(x = 150, ymin = 0.975, ymax = 1.275),
+    aes(x = 150, ymin = 0.96, ymax = 1.275),
     linetype = "11",
     linewidth = 1
   ) +
   geom_linerange(
-    aes(x = 120, ymin = 1.975, ymax = 2.275),
+    aes(x = 120, ymin = 1.96, ymax = 2.275),
     linetype = "11",
     linewidth = 1
   ) +
   # Records
   geom_point(
-    aes(x = D1_Extinct_data_1c, y = 0.975),
+    aes(x = D1_Extinct_data_1c, y = 0.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D1_Extinct_data_1u, y = 1.025),
+    aes(x = D1_Extinct_data_1u, y = 1.04),
     size = 2,
     colour = "darkred"
   ) +
   geom_point(
-    aes(x = D1_Extinct_data_2c, y = 1.975),
+    aes(x = D1_Extinct_data_2c, y = 1.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D1_Extinct_data_2u, y = 2.025),
+    aes(x = D1_Extinct_data_2u, y = 2.04),
     size = 2,
     colour = "darkred"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.875, 0.925)),
+    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -684,7 +708,7 @@ D1_Extinct_plot <- ggplot() +
     colour = "grey"
   ) +
   stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.875, 1.925)),
+    data = data.frame(x = c(101, 119), y = c(1.86, 1.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -693,8 +717,11 @@ D1_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario D: Null")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "I) D: Null")
 ```
 
 ## D Matched
@@ -708,25 +735,25 @@ D2_Extinct_data_2u <- create_records_simple(100, 0.175)
 D2_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.975),
+    aes(xmin = 0, xmax = 200, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.025),
+    aes(xmin = 0, xmax = 200, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.975),
+    aes(xmin = 0, xmax = 200, y = 1.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2.025),
+    aes(xmin = 0, xmax = 200, y = 2.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
@@ -739,39 +766,39 @@ D2_Extinct_plot <- ggplot() +
   ) +
   # Test Times
   geom_linerange(
-    aes(x = 150, ymin = 0.975, ymax = 1.275),
+    aes(x = 150, ymin = 0.96, ymax = 1.275),
     linetype = "11",
     linewidth = 1
   ) +
   geom_linerange(
-    aes(x = 120, ymin = 1.975, ymax = 2.275),
+    aes(x = 120, ymin = 1.96, ymax = 2.275),
     linetype = "11",
     linewidth = 1
   ) +
   # Records
   geom_point(
-    aes(x = D2_Extinct_data_1c, y = 0.975),
+    aes(x = D2_Extinct_data_1c, y = 0.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D2_Extinct_data_1u, y = 1.025),
+    aes(x = D2_Extinct_data_1u, y = 1.04),
     size = 2,
     colour = "darkred"
   ) +
   geom_point(
-    aes(x = D2_Extinct_data_2c, y = 1.975),
+    aes(x = D2_Extinct_data_2c, y = 1.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D2_Extinct_data_2u, y = 2.025),
+    aes(x = D2_Extinct_data_2u, y = 2.04),
     size = 2,
     colour = "darkred"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.875, 0.925)),
+    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -779,7 +806,7 @@ D2_Extinct_plot <- ggplot() +
     colour = "grey"
   ) +
   stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.875, 1.925)),
+    data = data.frame(x = c(101, 119), y = c(1.86, 1.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -788,8 +815,11 @@ D2_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario D: Matched")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "J) D: Matched")
 ```
 
 ## D Constant
@@ -803,25 +833,25 @@ D3_Extinct_data_2u <- create_records_simple(120, 0.175)
 D3_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.975),
+    aes(xmin = 0, xmax = 200, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.025),
+    aes(xmin = 0, xmax = 200, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.975),
+    aes(xmin = 0, xmax = 200, y = 1.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2.025),
+    aes(xmin = 0, xmax = 200, y = 2.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
@@ -834,39 +864,39 @@ D3_Extinct_plot <- ggplot() +
   ) +
   # Test Times
   geom_linerange(
-    aes(x = 150, ymin = 0.975, ymax = 1.275),
+    aes(x = 150, ymin = 0.96, ymax = 1.275),
     linetype = "11",
     linewidth = 1
   ) +
   geom_linerange(
-    aes(x = 120, ymin = 1.975, ymax = 2.275),
+    aes(x = 120, ymin = 1.96, ymax = 2.275),
     linetype = "11",
     linewidth = 1
   ) +
   # Records
   geom_point(
-    aes(x = D3_Extinct_data_1c, y = 0.975),
+    aes(x = D3_Extinct_data_1c, y = 0.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D3_Extinct_data_1u, y = 1.025),
+    aes(x = D3_Extinct_data_1u, y = 1.04),
     size = 2,
     colour = "darkred"
   ) +
   geom_point(
-    aes(x = D3_Extinct_data_2c, y = 1.975),
+    aes(x = D3_Extinct_data_2c, y = 1.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D3_Extinct_data_2u, y = 2.025),
+    aes(x = D3_Extinct_data_2u, y = 2.04),
     size = 2,
     colour = "darkred"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.875, 0.925)),
+    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -874,7 +904,7 @@ D3_Extinct_plot <- ggplot() +
     colour = "grey"
   ) +
   stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.875, 1.925)),
+    data = data.frame(x = c(101, 119), y = c(1.86, 1.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -883,8 +913,11 @@ D3_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario D: Constant")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "K) D: Constant")
 ```
 
 ## D Increasing
@@ -902,25 +935,25 @@ D4_Extinct_data_2u <- create_records_simple(
 D4_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.975),
+    aes(xmin = 0, xmax = 200, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.025),
+    aes(xmin = 0, xmax = 200, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.975),
+    aes(xmin = 0, xmax = 200, y = 1.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2.025),
+    aes(xmin = 0, xmax = 200, y = 2.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
@@ -933,39 +966,39 @@ D4_Extinct_plot <- ggplot() +
   ) +
   # Test Times
   geom_linerange(
-    aes(x = 150, ymin = 0.975, ymax = 1.275),
+    aes(x = 150, ymin = 0.96, ymax = 1.275),
     linetype = "11",
     linewidth = 1
   ) +
   geom_linerange(
-    aes(x = 120, ymin = 1.975, ymax = 2.275),
+    aes(x = 120, ymin = 1.96, ymax = 2.275),
     linetype = "11",
     linewidth = 1
   ) +
   # Records
   geom_point(
-    aes(x = D4_Extinct_data_1c, y = 0.975),
+    aes(x = D4_Extinct_data_1c, y = 0.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D4_Extinct_data_1u, y = 1.025),
+    aes(x = D4_Extinct_data_1u, y = 1.04),
     size = 2,
     colour = "darkred"
   ) +
   geom_point(
-    aes(x = D4_Extinct_data_2c, y = 1.975),
+    aes(x = D4_Extinct_data_2c, y = 1.96),
     size = 2,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D4_Extinct_data_2u, y = 2.025),
+    aes(x = D4_Extinct_data_2u, y = 2.04),
     size = 2,
     colour = "darkred"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.875, 0.925)),
+    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -973,7 +1006,7 @@ D4_Extinct_plot <- ggplot() +
     colour = "grey"
   ) +
   stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.875, 1.925)),
+    data = data.frame(x = c(101, 119), y = c(1.86, 1.91)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
@@ -982,9 +1015,11 @@ D4_Extinct_plot <- ggplot() +
   ) +
   lims(x = c(0, 200), y = c(0.725, 2.275)) +
   theme_void() +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-  labs(title = "Scenario D: Increasing")
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    plot.title = element_text(margin = margin(0, 0, 1, 0))
+  ) +
+  labs(title = "L) D: Increasing")
 ```
 
 ## D All
