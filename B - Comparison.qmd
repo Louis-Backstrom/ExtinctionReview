@@ -99,7 +99,7 @@ extant_plot <- ggplot() +
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, ncol = 2)
-ggsave("Figure2.svg", all_plot, width = 12, height = 6)
+ggsave("Figure3.svg", all_plot, width = 12, height = 6)
 all_plot
 ```
 

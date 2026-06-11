@@ -184,6 +184,6 @@ comparison_plot <- ggplot(scenario_a) +
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, comparison_plot, ncol = 3)
-ggsave("Figure1.svg", all_plot, width = 12, height = 4)
+ggsave("Figure2.svg", all_plot, width = 12, height = 4)
 all_plot
 ```

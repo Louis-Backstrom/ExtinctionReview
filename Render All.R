@@ -9,6 +9,9 @@ source("Render Functions.R")
 style_file(list.files(pattern = ".qmd"))
 
 
+render_safe("Illustrative Figure.qmd")
+
+
 render_safe("A - Extinct.qmd")
 render_safe("A - Extant.qmd")
 render_safe("A - Comparison.qmd")
@@ -37,3 +40,4 @@ render_safe("Example - Alaotra Grebe.qmd")
 render_safe("Example - Forest Owlet.qmd")
 render_safe("Example - Slender-billed Curlew.qmd")
 render_safe("Examples - Comparison.qmd")
+

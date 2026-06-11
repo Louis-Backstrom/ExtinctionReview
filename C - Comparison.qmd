@@ -185,6 +185,6 @@ C4_plot <- ggplot(C4_joined) +
   theme(legend.position = "none")
 
 all_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
-ggsave("Figure3.svg", all_plot, width = 12, height = 3)
+ggsave("Figure4.svg", all_plot, width = 12, height = 3)
 all_plot
 ```

@@ -37,6 +37,6 @@ Combine plots:
 #| fig-width: 12
 #| fig-height: 4
 all_plot <- ggarrange(grebe_plot, owlet_plot, curlew_plot, ncol = 3)
-ggsave("Figure5.svg", all_plot, width = 12, height = 4)
+ggsave("Figure6.svg", all_plot, width = 12, height = 4)
 all_plot
 ```

@@ -187,7 +187,7 @@ D4_plot <- ggplot(D4_joined) +
   theme(legend.position = "none")
 
 all_plot <- ggarrange(D1_plot, D2_plot, D3_plot, D4_plot, ncol = 4)
-ggsave("Figure4.svg", all_plot, width = 12, height = 3)
+ggsave("Figure5.svg", all_plot, width = 12, height = 3)
 all_plot
 ```
 
