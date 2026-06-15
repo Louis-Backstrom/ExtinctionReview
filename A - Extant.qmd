@@ -46,7 +46,7 @@ models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
 Set up parallel processing:
 
 ```{r setup-parallel}
-plan(multisession, workers = floor(parallel::detectCores() * 0.75))
+plan(multisession, workers = floor(parallel::detectCores() * 0.5))
 # plan(sequential)
 ```
 
@@ -273,8 +273,8 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     ),
     "KO20B2" = KO20B2(
       records = records$ubin, alpha = alpha, init.time = 1,
-      test.time = test_time, n.chains = 1, n.iter = 11e3,
-      n.burnin = 1e3, n.thin = 10
+      test.time = test_time, record.check = "remove",
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
     "KO21B1" = KO21B1(
       records = records$ubin, alpha = alpha, init.time = 1,
