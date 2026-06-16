@@ -17,6 +17,7 @@ Load libraries:
 
 ```{r load-libraries}
 library(tidyverse)
+library(scales)
 library(ggpubr)
 ```
 
@@ -59,44 +60,46 @@ Compare C1 with C2, C3, and C4:
 
 ```{r extinct-comparison}
 #| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 3
+#| fig-width: 9
+#| fig-height: 9
+
+max_threshold <- 250
+
+C1_extinct <- C1_extinct %>%
+  mutate(oob = threshold >= max_threshold)
 
 C2_joined <- left_join(
   C1_extinct,
   C2_extinct,
   by = c("model", "best_model"),
   suffix = c("_C1", "_C2")
-)
+) %>%
+  mutate(oob = threshold_C2 >= max_threshold)
 
 C3_joined <- left_join(
   C1_extinct,
   C3_extinct,
   by = c("model", "best_model"),
   suffix = c("_C1", "_C3")
-)
+) %>%
+  mutate(oob = threshold_C3 >= max_threshold)
 
 C4_joined <- left_join(
   C1_extinct,
   C4_extinct,
   by = c("model", "best_model"),
   suffix = c("_C1", "_C4")
-)
-
-max_threshold <- max(
-  max(C1_extinct$threshold, na.rm = TRUE),
-  max(C2_extinct$threshold, na.rm = TRUE),
-  max(C3_extinct$threshold, na.rm = TRUE),
-  max(C4_extinct$threshold, na.rm = TRUE)
-)
+) %>%
+  mutate(oob = threshold_C4 >= max_threshold)
 
 C1_plot <- ggplot(C1_extinct) +
   geom_point(
-    aes(x = power, y = threshold, colour = best_model),
+    aes(x = power, y = threshold, shape = oob, colour = best_model),
     size = 2
   ) +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
+  scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
@@ -109,20 +112,21 @@ C1_plot <- ggplot(C1_extinct) +
 C2_plot <- ggplot(C2_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C2, yend = threshold_C2),
-    colour = "grey90",
+    colour = "grey",
     linewidth = 0.25
   ) +
   geom_point(
     aes(x = power_C1, y = threshold_C1),
-    colour = "grey90",
+    colour = "grey",
     size = 1
   ) +
   geom_point(
-    aes(x = power_C2, y = threshold_C2, colour = best_model),
+    aes(x = power_C2, y = threshold_C2, shape = oob, colour = best_model),
     size = 2
   ) +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
+  scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
@@ -135,20 +139,21 @@ C2_plot <- ggplot(C2_joined) +
 C3_plot <- ggplot(C3_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C3, yend = threshold_C3),
-    colour = "grey90",
+    colour = "grey",
     linewidth = 0.25
   ) +
   geom_point(
     aes(x = power_C1, y = threshold_C1),
-    colour = "grey90",
+    colour = "grey",
     size = 1
   ) +
   geom_point(
-    aes(x = power_C3, y = threshold_C3, colour = best_model),
+    aes(x = power_C3, y = threshold_C3, shape = oob, colour = best_model),
     size = 2
   ) +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
+  scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
@@ -161,20 +166,21 @@ C3_plot <- ggplot(C3_joined) +
 C4_plot <- ggplot(C4_joined) +
   geom_segment(
     aes(x = power_C1, y = threshold_C1, xend = power_C4, yend = threshold_C4),
-    colour = "grey90",
+    colour = "grey",
     linewidth = 0.25
   ) +
   geom_point(
     aes(x = power_C1, y = threshold_C1),
-    colour = "grey90",
+    colour = "grey",
     size = 1
   ) +
   geom_point(
-    aes(x = power_C4, y = threshold_C4, colour = best_model),
+    aes(x = power_C4, y = threshold_C4, shape = oob, colour = best_model),
     size = 2
   ) +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, max_threshold)) +
+  scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
+  scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
   labs(
     x = "Initial Power at Extinction",
@@ -184,8 +190,8 @@ C4_plot <- ggplot(C4_joined) +
   theme_classic() +
   theme(legend.position = "none")
 
-all_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 4)
-ggsave("Figure4.svg", all_plot, width = 12, height = 3)
+all_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, ncol = 2, nrow = 2)
+ggsave("Figure4.svg", all_plot, width = 9, height = 9)
 all_plot
 ```
 

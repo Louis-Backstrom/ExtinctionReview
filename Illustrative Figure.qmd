@@ -178,12 +178,12 @@ A_Extant_plot <- ggplot() +
 A_plot <- ggarrange(
   A_Extinct_plot, NULL, A_Extant_plot,
   ncol = 3, widths = c(1, 0.1, 1)
-) 
-  
+)
+
 A_plot <- annotate_figure(
   A_plot,
   top = text_grob(
-    "A) Scenario A: Gaps in the Sighting Record", 
+    "A) Scenario A: Gaps in the Sighting Record",
     x = 0, hjust = 0, size = 13.2
   )
 )
@@ -323,16 +323,15 @@ B_Extant_plot <- ggplot() +
 B_plot <- ggarrange(
   B_Extinct_plot, NULL, B_Extant_plot,
   ncol = 3, widths = c(1, 0.1, 1)
-) 
+)
 
 B_plot <- annotate_figure(
   B_plot,
   top = text_grob(
-    "B) Scenario B: Duration of the Sighting Record", 
+    "B) Scenario B: Duration of the Sighting Record",
     x = 0, hjust = 0, size = 13.2
   )
 )
-  
 ```
 
 ## C Null
@@ -521,15 +520,15 @@ C4_Extinct_plot <- ggplot() +
 
 ```{r c-all}
 C_plot <- ggarrange(
-  C1_Extinct_plot, NULL, C2_Extinct_plot, 
+  C1_Extinct_plot, NULL, C2_Extinct_plot,
   C3_Extinct_plot, NULL, C4_Extinct_plot,
   ncol = 3, nrow = 2, widths = c(1, 0.1, 1)
-) 
+)
 
 C_plot <- annotate_figure(
   C_plot,
   top = text_grob(
-    "C) Scenario C: Sighting Rate", 
+    "C) Scenario C: Sighting Rate",
     x = 0, hjust = 0, size = 13.2
   )
 )
@@ -773,15 +772,15 @@ D4_Extinct_plot <- ggplot() +
 
 ```{r d-all}
 D_plot <- ggarrange(
-  D1_Extinct_plot, NULL, D2_Extinct_plot, 
+  D1_Extinct_plot, NULL, D2_Extinct_plot,
   D3_Extinct_plot, NULL, D4_Extinct_plot,
   ncol = 3, nrow = 2, widths = c(1, 0.1, 1)
-) 
+)
 
 D_plot <- annotate_figure(
   D_plot,
   top = text_grob(
-    "D) Scenario D: Sighting Uncertainty", 
+    "D) Scenario D: Sighting Uncertainty",
     x = 0, hjust = 0, size = 13.2
   )
 )
@@ -791,8 +790,8 @@ D_plot <- annotate_figure(
 
 ```{r full}
 #| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 12
+#| fig-width: 9
+#| fig-height: 9
 Full_plot <- ggarrange(
   A_plot, NULL, B_plot, NULL, C_plot, NULL, D_plot,
   nrow = 7, heights = c(1, 0.1, 1, 0.1, 1, 0.1, 1)
@@ -800,5 +799,5 @@ Full_plot <- ggarrange(
 
 Full_plot
 
-ggsave("Figure1.svg", Full_plot, width = 12, height = 12)
+ggsave("Figure1.svg", Full_plot, width = 9, height = 9)
 ```

@@ -717,12 +717,12 @@ summary_plot <- inc_results %>%
   geom_line(aes(x = test_time, y = extinct_count), linewidth = 1) +
   geom_hline(
     yintercept = length(models) - nrow(excluded),
-    linetype = "dashed", linewidth = 1
+    linetype = "dashed"
   ) +
   theme_classic() +
   labs(
     x = "Test Time",
-    y = "Number of Models Inferring Extinction",
+    y = "Models Inferring Extinction",
     title = "A) Alaotra Grebe"
   )
 
