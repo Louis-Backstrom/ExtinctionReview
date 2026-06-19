@@ -799,7 +799,7 @@ estimate_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
     ID %in% (curr_extinct %>%
       filter(isextinct == TRUE) %>%
       pull(model)),
-    `Est.` == "✓"
+    Estimate == "Yes"
   ) %>%
   pull(ID)
 
@@ -819,7 +819,7 @@ interval_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
     ID %in% (curr_extinct %>%
       filter(isextinct == TRUE) %>%
       pull(model)),
-    `Int.` == "✓"
+    Interval %in% c("Confidence", "Credible")
   ) %>%
   pull(ID)
 
