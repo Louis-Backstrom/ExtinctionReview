@@ -210,9 +210,9 @@ Combine and plot:
 
 ```{r illustrative-figure}
 #| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 12
+#| fig-width: 8
+#| fig-height: 8
 C_plot <- ggarrange(C1_plot, C2_plot, C3_plot, C4_plot, nrow = 4)
 C_plot
-ggsave("FigureS2.svg", C_plot, width = 12, height = 12)
+ggsave("FigureS2.svg", C_plot, width = 8, height = 8)
 ```

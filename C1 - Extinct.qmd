@@ -75,7 +75,7 @@ eps_rate <- 5
 pir_start <- p_i * p_r
 
 epss <- eps_start + (eps_end - eps_start) * plogis(
-  seq(-eps_rate, 2 * eps_rate, length.out = 2 * extinction_time)
+  seq(-eps_rate, eps_rate * 2, length.out = extinction_time * 2)
 )
 
 pirs <- c(rep(pir_start, extinction_time), rep(0, extinction_time))
@@ -660,11 +660,11 @@ predictions <- predictions %>%
   mutate(model = factor(model, levels = models))
 
 accuracy_plot <- ggplot() +
-  geom_ribbon(
-    data = predictions,
-    aes(x = test_time, ymin = lci, ymax = uci),
-    alpha = 0.2
-  ) +
+  # geom_ribbon(
+  #   data = predictions,
+  #   aes(x = test_time, ymin = lci, ymax = uci),
+  #   alpha = 0.2
+  # ) +
   geom_line(
     data = predictions,
     aes(x = test_time, y = fit),
@@ -677,19 +677,26 @@ accuracy_plot <- ggplot() +
   geom_vline(
     data = thresholds,
     aes(xintercept = threshold + extinction_time),
-    linetype = "dashed"
+    linetype = "dashed",
+    colour = "darkblue"
   ) +
   geom_hline(
     data = thresholds,
     aes(yintercept = 1 - beta),
-    linetype = "dashed"
+    linetype = "dashed",
+    colour = "darkblue"
   ) +
   geom_label(
     data = excluded,
     label = "Excluded", x = (max(test_times) + extinction_time) / 2,
     y = 0.5, fontface = "italic"
   ) +
-  scale_x_continuous(limits = c(extinction_time, 2 * extinction_time)) +
+  scale_x_continuous(
+    limits = c(extinction_time, extinction_time * 2),
+    breaks = c(extinction_time, extinction_time * 1.5, extinction_time * 2),
+    expand = c(0.1, 0.1)
+  ) +
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
   theme_classic() +
   theme(
@@ -704,28 +711,28 @@ accuracy_plot <- ggplot() +
 
 ```{r accuracy-portrait}
 #| fig-dpi: 600
-#| fig-width: 9
-#| fig-height: 12
+#| fig-width: 8
+#| fig-height: 9
 accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 6, nrow = 8,
     axes = "all", remove_labels = "all"
   )
+
+ggsave("FigureS9.svg", width = 8, height = 9, device = function(...) {
+  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
+})
 ```
 
 ```{r accuracy-landscape}
 #| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 6
+#| fig-width: 9
+#| fig-height: 4.5
 accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
   )
-
-ggsave("FigureS8.svg", width = 12, height = 6, device = function(...) {
-  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
-})
 ```
 
 # Errors, Warnings, etc.

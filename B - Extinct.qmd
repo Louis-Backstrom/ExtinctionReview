@@ -579,17 +579,36 @@ saveRDS(accuracy_results, "Outputs/B/Extinct/accuracy_results.rds")
 excluded <- tibble(model = "AL14B2") %>%
   mutate(model = factor(model, levels = models))
 
+min_extinction_time <- accuracy_results %>%
+  pull(extinction_time) %>%
+  min()
+
+mid_extinction_time <- accuracy_results %>%
+  pull(extinction_time) %>%
+  range() %>%
+  median()
+
+max_extinction_time <- accuracy_results %>%
+  pull(extinction_time) %>%
+  max()
+
 accuracy_plot <- ggplot(accuracy_results) +
   geom_line(
     aes(x = extinction_time, y = threshold)
   ) +
   geom_label(
-    data = excluded,
-    label = "Excluded",
-    x = (min(extinction_times) + max(extinction_times)) / 2,
-    y = 75, fontface = "italic"
+    data = excluded, label = "Excluded",
+    x = mid_extinction_time, y = 75,
+    fontface = "italic"
   ) +
-  scale_y_continuous(limits = c(0, 150)) +
+  scale_x_continuous(
+    breaks = c(min_extinction_time, mid_extinction_time, max_extinction_time),
+    expand = c(0.1, 0.1)
+  ) +
+  coord_cartesian(
+    xlim = c(min_extinction_time, max_extinction_time),
+    ylim = c(0, 150)
+  ) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -603,28 +622,28 @@ accuracy_plot <- ggplot(accuracy_results) +
 
 ```{r accuracy-portrait}
 #| fig-dpi: 600
-#| fig-width: 9
-#| fig-height: 12
+#| fig-width: 8
+#| fig-height: 9
 accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 6, nrow = 8,
     axes = "all", remove_labels = "all"
   )
+
+ggsave("FigureS7.svg", width = 8, height = 9, device = function(...) {
+  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
+})
 ```
 
 ```{r accuracy-landscape}
 #| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 6
+#| fig-width: 9
+#| fig-height: 4.5
 accuracy_plot +
   facet_wrap2(~model,
     drop = FALSE, ncol = 8, nrow = 6,
     axes = "all", remove_labels = "all"
   )
-
-ggsave("FigureS6.svg", width = 12, height = 6, device = function(...) {
-  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
-})
 ```
 
 # Errors, Warnings, etc.
