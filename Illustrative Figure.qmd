@@ -429,7 +429,9 @@ C2_Extinct_plot <- ggplot() +
 ```{r c-increasing}
 # NB: not strictly the same as in the real simulations, but close enough for
 # illustrative purposes in this figure!
-C3_Extinct_data_1 <- create_records_simple(100, seq(0.0, 0.35, length.out = 100))
+C3_Extinct_data_1 <- create_records_simple(
+  100, seq(0.0, 0.35, length.out = 100)
+)
 
 C3_Extinct_plot <- ggplot() +
   # Timeline

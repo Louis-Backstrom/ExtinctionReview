@@ -171,8 +171,11 @@ comparison_plot <- ggplot(scenario_a) +
   theme(legend.position = "none") +
   labs(
     title = "C) Comparison",
-    x = paste0("Time to Achieve ", (1 - beta) * 100, "% Power\n(After Extinction)"),
-    y = "Type I Error Rate"
+    x = paste0(
+      "Time to Achieve ", (1 - beta) * 100,
+      "% Power\n(After Extinction)"
+    ),
+    y = "Average Type I Error Rate"
   )
 
 all_plot <- ggarrange(extinct_plot, extant_plot, comparison_plot, ncol = 3)

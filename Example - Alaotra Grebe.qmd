@@ -121,7 +121,9 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       records = records$ccon, alpha = alpha,
       test.time = test_time
     ),
-    "MC06F1" = MC06F1(records = records$cbin, alpha = alpha, init.time = init_time),
+    "MC06F1" = MC06F1(
+      records = records$cbin, alpha = alpha, init.time = init_time
+    ),
     "RO09B1" = RO09B1(
       records = records$cbin, pi = 0.5, n.chains = 4,
       n.iter = 11e4, n.burnin = 1e4
@@ -232,8 +234,12 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       records = records$ubin, alpha = alpha, init.time = init_time,
       n.chains = 4, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
-    "SB14B1" = SB14B1(records = records$ubin, init.time = init_time, increment = 0.001),
-    "SB14B2" = SB14B2(records = records$ubin, init.time = init_time, increment = 0.001),
+    "SB14B1" = SB14B1(
+      records = records$ubin, init.time = init_time, increment = 0.001
+    ),
+    "SB14B2" = SB14B2(
+      records = records$ubin, init.time = init_time, increment = 0.001
+    ),
     "AL15B1" = AL15B1(records = records$cbin),
     "SO16B1" = SO16B1(
       records = records$cbin, init.time = NULL,
@@ -644,7 +650,10 @@ saveRDS(model_times, "Outputs/Alaotra Grebe/model_times.rds")
 Results:
 
 ```{r results}
-model_files <- list.files("Outputs/Alaotra Grebe", pattern = "\\.rds$", full.names = TRUE)
+model_files <- list.files(
+  "Outputs/Alaotra Grebe",
+  pattern = "\\.rds$", full.names = TRUE
+)
 model_files <- model_files[!grepl("model_times\\.rds$", model_files)]
 model_files <- model_files[!grepl("records_full\\.rds$", model_files)]
 model_files <- model_files[!grepl("surveys_full\\.rds$", model_files)]

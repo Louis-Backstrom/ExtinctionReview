@@ -294,7 +294,7 @@
 <text x='627.34' y='183.46' text-anchor='middle' style='font-size: 8.80px; font-family: "Arial";' textLength='14.67px' lengthAdjust='spacingAndGlyphs'>150</text>
 <text x='555.24' y='196.22' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='137.23px' lengthAdjust='spacingAndGlyphs'>Time to Achieve 80% Power</text>
 <text x='555.24' y='208.10' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='81.34px' lengthAdjust='spacingAndGlyphs'>(After Extinction)</text>
-<text transform='translate(445.36,97.75) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='83.80px' lengthAdjust='spacingAndGlyphs'>Type I Error Rate</text>
+<text transform='translate(445.36,97.75) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='127.45px' lengthAdjust='spacingAndGlyphs'>Average Type I Error Rate</text>
 <text x='467.96' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='88.66px' lengthAdjust='spacingAndGlyphs'>C) Comparison</text>
 </g>
 </g>

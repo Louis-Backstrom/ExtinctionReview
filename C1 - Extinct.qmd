@@ -520,7 +520,10 @@ saveRDS(model_times, "Outputs/C1/Extinct/model_times.rds")
 Results:
 
 ```{r results}
-model_files <- list.files("Outputs/C1/Extinct", pattern = "\\.rds$", full.names = TRUE)
+model_files <- list.files(
+  "Outputs/C1/Extinct",
+  pattern = "\\.rds$", full.names = TRUE
+)
 model_files <- model_files[!grepl("model_times\\.rds$", model_files)]
 model_files <- model_files[!grepl("simulated_datasets\\.rds$", model_files)]
 

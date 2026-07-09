@@ -231,7 +231,9 @@ D4_rates <- tibble(
 )
 
 sighting_rates <- bind_rows(D1_rates, D2_rates, D3_rates, D4_rates) %>%
-  mutate(scenario = factor(scenario, levels = c("Null", "Matched", "Constant", "Increasing")))
+  mutate(scenario = factor(scenario, levels = c(
+    "Null", "Matched", "Constant", "Increasing"
+  )))
 
 D_plot <- ggplot(sighting_rates) +
   geom_step(
