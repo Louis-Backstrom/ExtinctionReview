@@ -47,129 +47,140 @@ set.seed(1234)
 ## A Extinct
 
 ```{r a-extinct}
-A_Extinct_data_1 <- create_records_simple(100, 0.175)
-A_Extinct_data_2 <- create_records_simple(100, 0.175)
+A_Extinct_data_1 <- create_records_simple(49, 0.175)
 
 A_Extinct_plot <- ggplot() +
-  # Timelines
+  # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1),
+    aes(xmin = 0, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
-  geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2),
-    linetype = "solid",
-    linewidth = 1
+  annotate(
+    geom = "text",
+    x = 25, y = 0.95, hjust = 0.5, vjust = 0,
+    size = 3, colour = "darkblue",
+    label = "← Time →",
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
+    xintercept = 50,
     linewidth = 1
   ) +
-  # Test Times
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
-    linewidth = 1
+  annotate(
+    geom = "text",
+    x = 50, y = 1.125, angle = 90, hjust = 0.5, vjust = -1,
+    size = 3,
+    label = "Extinction Time"
   ) +
-  geom_linerange(
-    aes(x = 120, ymin = 2, ymax = 2.25),
-    linetype = "11",
-    linewidth = 1
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.25, yend = 1.01),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
+  ) +
+  annotate(
+    geom = "text",
+    x = 85, y = 1.125, angle = 90, hjust = 0.5, vjust = -1,
+    size = 3, colour = "grey50",
+    label = "Test Time"
   ) +
   # Records
   geom_point(
     aes(x = A_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  geom_point(
-    aes(x = A_Extinct_data_2, y = 2),
-    size = 2
+  annotate(
+    geom = "text",
+    x = 25, y = 1.05, hjust = 0.5, vjust = 1,
+    size = 3, colour = "darkblue",
+    label = "↓ Records ↓",
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
+    data = data.frame(x = c(51, 84), y = c(0.9, 0.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.9, 1.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
-    linewidth = 1,
-    colour = "grey"
+  annotate(
+    geom = "text",
+    x = 67.5, y = 0.95, vjust = 0,
+    size = 3, colour = "grey50",
+    label = "Time Since Extinction"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 2.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Extinct")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.2, hjust = 0, vjust = 0,
+    label = "Extinct",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## A Extant
 
 ```{r a-extant}
-A_Extant_data_1 <- create_records_simple(80, 0.175) # fudge so that we get a gap
-A_Extant_data_2 <- create_records_simple(95, 0.175) # fudge so that we get a gap
+A_Extant_data_1 <- create_records_simple(29, 0.3) # fudge so that we get a gap
 
 A_Extant_plot <- ggplot() +
-  # Timelines
+  # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 100, y = 1),
+    aes(xmin = 0, xmax = 50, y = 1),
     linetype = "solid",
-    linewidth = 1
-  ) +
-  geom_linerange(
-    aes(xmin = 0, xmax = 100, y = 2),
-    linetype = "solid",
-    linewidth = 1
-  ) +
-  # Test Times
-  geom_linerange(
-    aes(x = 100, ymin = 1, ymax = 1.25),
-    linetype = "11",
-    linewidth = 1
-  ) +
-  geom_linerange(
-    aes(x = 100, ymin = 2, ymax = 2.25),
-    linetype = "11",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
   # Records
   geom_point(
     aes(x = A_Extant_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  geom_point(
-    aes(x = A_Extant_data_2, y = 2),
-    size = 2
+  # Test Time
+  geom_segment(
+    aes(x = 50, y = 1.25, yend = 1.01),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
+  ) +
+  annotate(
+    geom = "text",
+    x = 50, y = 1.125, angle = 90, hjust = 0.5, vjust = -1,
+    size = 3, colour = "grey50",
+    label = "Test Time"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(max(A_Extant_data_1) + 1, 99), y = c(0.9, 0.95)),
+    data = data.frame(x = c(max(A_Extant_data_1) + 1, 49), y = c(0.9, 0.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  stat_brace(
-    data = data.frame(x = c(max(A_Extant_data_2) + 1, 99), y = c(1.9, 1.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
-    linewidth = 1,
-    colour = "grey"
+  annotate(
+    geom = "text",
+    x = (max(A_Extant_data_1) + 50) / 2, y = 0.95, vjust = 0,
+    size = 3, colour = "grey50",
+    label = "Time Since Last Sighting"
   ) +
-  lims(x = c(0, 100), y = c(0.725, 2.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Extant")
+  # Subtitle
+  annotate(
+    "text",
+    x = 2.5, y = 1.2, hjust = 0, vjust = 0,
+    label = "Extant",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 50), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## A All
@@ -192,129 +203,174 @@ A_plot <- annotate_figure(
 ## B Extinct
 
 ```{r b-extinct}
-B_Extinct_data_1 <- create_records_simple(50, 0.175) + 50
-B_Extinct_data_2 <- create_records_simple(100, 0.175)
+B_Extinct_data_1 <- create_records_simple(24, 0.175) + 25
+B_Extinct_data_2 <- create_records_simple(49, 0.175)
 
 B_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 50, xmax = 200, y = 1),
+    aes(xmin = 25, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
+  ) +
+  annotate(
+    geom = "text",
+    x = 25, y = 1.2, hjust = 0.5, vjust = 1,
+    size = 3, colour = "darkblue",
+    label = "Shorter Duration",
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 2),
+    aes(xmin = 0, xmax = 100, y = 2),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
+  ) +
+  annotate(
+    geom = "text",
+    x = 25, y = 2.2, hjust = 0.5, vjust = 1,
+    size = 3, colour = "darkblue",
+    label = "Longer Duration",
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Times
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
-    linewidth = 1
-  ) +
-  geom_linerange(
-    aes(x = 120, ymin = 2, ymax = 2.25),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = B_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
   geom_point(
     aes(x = B_Extinct_data_2, y = 2),
-    size = 2
+    size = 3,
+    colour = "darkblue"
+  ) +
+  # Test Times
+  geom_segment(
+    aes(x = 60, y = 1.4, yend = 1.04),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
+  ) +
+  geom_segment(
+    aes(x = 80, y = 2.4, yend = 2.04),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
+    data = data.frame(x = c(51, 59), y = c(0.85, 0.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
   stat_brace(
-    data = data.frame(x = c(101, 119), y = c(1.9, 1.95)),
+    data = data.frame(x = c(51, 79), y = c(1.85, 1.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 2.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Extinct")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 2.25, hjust = 0, vjust = 0,
+    label = "Extinct",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 2.45)) +
+  theme_void()
 ```
 
 ## B Extant
 
 ```{r b-extant}
-B_Extant_data_1 <- create_records_simple(100, 0.175)
-B_Extant_data_2 <- B_Extant_data_1[B_Extant_data_1 <= 50]
+B_Extant_data_1 <- create_records_simple(44, 0.25)
+B_Extant_data_2 <- B_Extant_data_1[B_Extant_data_1 <= 25]
 
 B_Extant_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 100, y = 1),
+    aes(xmin = 0, xmax = 50, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
+  ) +
+  annotate(
+    geom = "text",
+    x = 49, y = 1.2, hjust = 1, vjust = 1,
+    size = 3, colour = "darkblue",
+    label = "Truncated Later",
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 50, y = 2),
+    aes(xmin = 0, xmax = 25, y = 2),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
-  # Test Times
-  geom_linerange(
-    aes(x = 100, ymin = 1, ymax = 1.25),
-    linetype = "11",
-    linewidth = 1
-  ) +
-  geom_linerange(
-    aes(x = 50, ymin = 2, ymax = 2.25),
-    linetype = "11",
-    linewidth = 1
+  annotate(
+    geom = "text",
+    x = 24, y = 2.2, hjust = 1, vjust = 1,
+    size = 3, colour = "darkblue",
+    label = "Truncated Earlier",
   ) +
   # Records
   geom_point(
     aes(x = B_Extant_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
   geom_point(
     aes(x = B_Extant_data_2, y = 2),
-    size = 2
+    size = 3,
+    colour = "darkblue"
+  ) +
+  # Test Times
+  geom_segment(
+    aes(x = 50, y = 1.4, yend = 1.04),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
+  ) +
+  geom_segment(
+    aes(x = 25, y = 2.4, yend = 2.04),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    linewidth = 1,
+    colour = "grey50"
   ) +
   # Brackets
   stat_brace(
-    data = data.frame(x = c(max(B_Extant_data_1) + 1, 99), y = c(0.9, 0.95)),
+    data = data.frame(x = c(max(B_Extant_data_1) + 1, 49), y = c(0.85, 0.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
   stat_brace(
-    data = data.frame(x = c(max(B_Extant_data_2) + 1, 49), y = c(1.9, 1.95)),
+    data = data.frame(x = c(max(B_Extant_data_2) + 1, 24), y = c(1.85, 1.95)),
     aes(x, y),
     outside = FALSE,
     rotate = 180,
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 100), y = c(0.725, 2.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Extant")
+  # Subtitle
+  annotate(
+    "text",
+    x = 2.5, y = 2.25, hjust = 0, vjust = 0,
+    label = "Extant",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 50), y = c(0.85, 2.45)) +
+  theme_void()
 ```
 
 ## B All
@@ -337,45 +393,43 @@ B_plot <- annotate_figure(
 ## C Null
 
 ```{r c-null}
-C1_Extinct_data_1 <- create_records_simple(100, 0.175)
+C1_Extinct_data_1 <- create_records_simple(49, 0.175)
 
 C1_Extinct_plot <- ggplot() +
   # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1),
+    aes(xmin = 0, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = C1_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.25, yend = 1.02),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Null")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Null",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## C Declining Detectability
@@ -383,45 +437,45 @@ C1_Extinct_plot <- ggplot() +
 ```{r c-declining}
 # NB: not strictly the same as in the real simulations, but close enough for
 # illustrative purposes in this figure!
-C2_Extinct_data_1 <- create_records_simple(100, seq(0.175, 0, length.out = 100))
+C2_Extinct_data_1 <- create_records_simple(49, c(
+  seq(0.5, 0, length.out = 40), rep(0, 9)
+))
 
 C2_Extinct_plot <- ggplot() +
   # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1),
+    aes(xmin = 0, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = C2_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.25, yend = 1.02),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Declining Detectability")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Declining Detectability",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## C Increasing Survey Effort
@@ -429,47 +483,43 @@ C2_Extinct_plot <- ggplot() +
 ```{r c-increasing}
 # NB: not strictly the same as in the real simulations, but close enough for
 # illustrative purposes in this figure!
-C3_Extinct_data_1 <- create_records_simple(
-  100, seq(0.0, 0.35, length.out = 100)
-)
+C3_Extinct_data_1 <- create_records_simple(49, seq(0, 0.35, length.out = 49))
 
 C3_Extinct_plot <- ggplot() +
   # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1),
+    aes(xmin = 0, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = C3_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.25, yend = 1.02),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Increasing Survey Effort")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Increasing Survey Effort",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## C Combined
@@ -477,45 +527,43 @@ C3_Extinct_plot <- ggplot() +
 ```{r c-combined}
 # NB: not strictly the same as in the real simulations, but close enough for
 # illustrative purposes in this figure!
-C4_Extinct_data_1 <- create_records_simple(100, 0.175)
+C4_Extinct_data_1 <- create_records_simple(49, 0.175)
 
 C4_Extinct_plot <- ggplot() +
   # Timeline
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1),
+    aes(xmin = 0, xmax = 100, y = 1),
     linetype = "solid",
-    linewidth = 1
+    linewidth = 1,
+    colour = "darkblue"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 1, ymax = 1.25),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = C4_Extinct_data_1, y = 1),
-    size = 2
+    size = 3,
+    colour = "darkblue"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.9, 0.95)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.25, yend = 1.02),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Combined")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Combined",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## C All
@@ -539,235 +587,231 @@ C_plot <- annotate_figure(
 ## D Null
 
 ```{r d-null}
-D1_Extinct_data_1c <- create_records_simple(100, 0.175)
+D1_Extinct_data_1c <- create_records_simple(49, 0.175)
 D1_Extinct_data_1u <- NA
 
 D1_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.96),
+    aes(xmin = 0, xmax = 100, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
+  annotate(
+    geom = "text",
+    x = 25, y = 0.85, hjust = 0.5, vjust = 0,
+    size = 3, colour = "darkblue",
+    label = "Certain",
+  ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.04),
+    aes(xmin = 0, xmax = 100, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
+  annotate(
+    geom = "text",
+    x = 25, y = 1.14, hjust = 0.5, vjust = 1,
+    size = 3, colour = "darkred",
+    label = "Uncertain",
+  ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 0.96, ymax = 1.275),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = D1_Extinct_data_1c, y = 0.96),
-    size = 2,
+    size = 3,
     colour = "darkblue"
   ) +
   geom_point(
     aes(x = D1_Extinct_data_1u, y = 1.04),
-    size = 2,
+    size = 3,
     colour = "darkred"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.21, yend = 0.98),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Null")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Null",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## D Matched
 
 ```{r d-matched}
-D2_Extinct_data_1c <- create_records_simple(100, 0.175)
-D2_Extinct_data_1u <- create_records_simple(100, 0.175)
+D2_Extinct_data_1c <- create_records_simple(49, 0.175)
+D2_Extinct_data_1u <- create_records_simple(49, 0.175)
 
 D2_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.96),
+    aes(xmin = 0, xmax = 100, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.04),
+    aes(xmin = 0, xmax = 100, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 0.96, ymax = 1.275),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = D2_Extinct_data_1c, y = 0.96),
-    size = 2,
+    size = 3,
     colour = "darkblue"
   ) +
   geom_point(
     aes(x = D2_Extinct_data_1u, y = 1.04),
-    size = 2,
+    size = 3,
     colour = "darkred"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.21, yend = 0.98),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Matched")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Matched",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## D Constant
 
 ```{r d-constant}
-D3_Extinct_data_1c <- create_records_simple(100, 0.175)
-D3_Extinct_data_1u <- create_records_simple(150, 0.175)
+D3_Extinct_data_1c <- create_records_simple(49, 0.175)
+D3_Extinct_data_1u <- create_records_simple(84, 0.175)
 
 D3_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.96),
+    aes(xmin = 0, xmax = 100, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.04),
+    aes(xmin = 0, xmax = 100, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 0.96, ymax = 1.275),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = D3_Extinct_data_1c, y = 0.96),
-    size = 2,
+    size = 3,
     colour = "darkblue"
   ) +
   geom_point(
     aes(x = D3_Extinct_data_1u, y = 1.04),
-    size = 2,
+    size = 3,
     colour = "darkred"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.21, yend = 0.98),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Constant")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Constant",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## D Increasing
 
 ```{r d-increasing}
-D4_Extinct_data_1c <- create_records_simple(100, 0.175)
+D4_Extinct_data_1c <- create_records_simple(49, 0.175)
 D4_Extinct_data_1u <- create_records_simple(
-  150, seq(0, 0.175 * 1.5, length.out = 150)
+  85, seq(0, 0.175 * 1.5, length.out = 84)
 )
 
 D4_Extinct_plot <- ggplot() +
   # Timelines
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 0.96),
+    aes(xmin = 0, xmax = 100, y = 0.96),
     linetype = "solid",
     linewidth = 1,
     colour = "darkblue"
   ) +
   geom_linerange(
-    aes(xmin = 0, xmax = 200, y = 1.04),
+    aes(xmin = 0, xmax = 100, y = 1.04),
     linetype = "solid",
     linewidth = 1,
     colour = "darkred"
   ) +
   # Extinction Time
   geom_vline(
-    xintercept = 100,
-    linetype = "33",
-    linewidth = 1
-  ) +
-  # Test Time
-  geom_linerange(
-    aes(x = 150, ymin = 0.96, ymax = 1.275),
-    linetype = "11",
+    xintercept = 50,
     linewidth = 1
   ) +
   # Records
   geom_point(
     aes(x = D4_Extinct_data_1c, y = 0.96),
-    size = 2,
+    size = 3,
     colour = "darkblue"
   ) +
   geom_point(
     aes(x = D4_Extinct_data_1u, y = 1.04),
-    size = 2,
+    size = 3,
     colour = "darkred"
   ) +
-  # Bracket
-  stat_brace(
-    data = data.frame(x = c(101, 149), y = c(0.86, 0.91)),
-    aes(x, y),
-    outside = FALSE,
-    rotate = 180,
+  # Test Time
+  geom_segment(
+    aes(x = 85, y = 1.21, yend = 0.98),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 1,
-    colour = "grey"
+    colour = "grey50"
   ) +
-  lims(x = c(0, 200), y = c(0.725, 1.275)) +
-  theme_void() +
-  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
-  labs(subtitle = "Increasing")
+  # Subtitle
+  annotate(
+    "text",
+    x = 5, y = 1.15, hjust = 0, vjust = 0,
+    label = "Increasing",
+    fontface = "italic"
+  ) +
+  lims(x = c(0, 100), y = c(0.85, 1.25)) +
+  theme_void()
 ```
 
 ## D All
