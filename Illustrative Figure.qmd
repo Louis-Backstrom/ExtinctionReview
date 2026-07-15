@@ -304,8 +304,7 @@ B_Extinct_plot <- ggplot() +
 
 ```{r b-extant}
 B_Extant_data_1 <- create_records_simple(44, 0.25)
-B_Extant_data_2a <- B_Extant_data_1[B_Extant_data_1 <= 25]
-B_Extant_data_2b <- B_Extant_data_1[B_Extant_data_1 > 25]
+B_Extant_data_2 <- B_Extant_data_1[B_Extant_data_1 <= 25]
 
 B_Extant_plot <- ggplot() +
   # Timelines
@@ -343,15 +342,9 @@ B_Extant_plot <- ggplot() +
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = B_Extant_data_2a, y = 2),
+    aes(x = B_Extant_data_2, y = 2),
     size = 3,
     colour = "darkblue"
-  ) +
-  geom_point(
-    aes(x = B_Extant_data_2b, y = 2),
-    pch = 1,
-    size = 3,
-    colour = "darkblue", alpha = 0.25
   ) +
   # Subtitle
   annotate(
@@ -567,8 +560,8 @@ C_plot <- annotate_figure(
 ## D Null
 
 ```{r d-null}
-D1_Extinct_data_1c <- create_records_simple(49, 0.175)
-D1_Extinct_data_1u <- NA
+D1_Extinct_data_c <- create_records_simple(49, 0.175)
+D1_Extinct_data_u <- NA
 
 D1_Extinct_plot <- ggplot() +
   # Timelines
@@ -611,12 +604,12 @@ D1_Extinct_plot <- ggplot() +
   ) +
   # Records
   geom_point(
-    aes(x = D1_Extinct_data_1c, y = 0.96),
+    aes(x = D1_Extinct_data_c, y = 0.96),
     size = 3,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D1_Extinct_data_1u, y = 1.04),
+    aes(x = D1_Extinct_data_u, y = 1.04),
     size = 3,
     colour = "darkred"
   ) +
@@ -634,8 +627,8 @@ D1_Extinct_plot <- ggplot() +
 ## D Matched
 
 ```{r d-matched}
-D2_Extinct_data_1c <- create_records_simple(49, 0.175)
-D2_Extinct_data_1u <- create_records_simple(49, 0.175)
+D2_Extinct_data_c <- create_records_simple(49, 0.175)
+D2_Extinct_data_u <- create_records_simple(49, 0.175)
 
 D2_Extinct_plot <- ggplot() +
   # Timelines
@@ -666,12 +659,12 @@ D2_Extinct_plot <- ggplot() +
   ) +
   # Records
   geom_point(
-    aes(x = D2_Extinct_data_1c, y = 0.96),
+    aes(x = D2_Extinct_data_c, y = 0.96),
     size = 3,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D2_Extinct_data_1u, y = 1.04),
+    aes(x = D2_Extinct_data_u, y = 1.04),
     size = 3,
     colour = "darkred"
   ) +
@@ -689,8 +682,8 @@ D2_Extinct_plot <- ggplot() +
 ## D Constant
 
 ```{r d-constant}
-D3_Extinct_data_1c <- create_records_simple(49, 0.12)
-D3_Extinct_data_1u <- create_records_simple(84, 0.12)
+D3_Extinct_data_c <- create_records_simple(49, 0.12)
+D3_Extinct_data_u <- create_records_simple(84, 0.12)
 
 D3_Extinct_plot <- ggplot() +
   # Timelines
@@ -721,20 +714,14 @@ D3_Extinct_plot <- ggplot() +
   ) +
   # Records
   geom_point(
-    aes(x = D3_Extinct_data_1c, y = 0.96),
+    aes(x = D3_Extinct_data_c, y = 0.96),
     size = 3,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D3_Extinct_data_1u, y = 1.04),
+    aes(x = D3_Extinct_data_u, y = 1.04),
     size = 3,
     colour = "darkred"
-  ) +
-  geom_point(
-    aes(x = c(90, 94, 98), y = 1.04),
-    pch = 1,
-    size = 3,
-    colour = "darkred", alpha = 0.25
   ) +
   # Subtitle
   annotate(
@@ -750,8 +737,8 @@ D3_Extinct_plot <- ggplot() +
 ## D Increasing
 
 ```{r d-increasing}
-D4_Extinct_data_1c <- create_records_simple(49, 0.175)
-D4_Extinct_data_1u <- create_records_simple(
+D4_Extinct_data_c <- create_records_simple(49, 0.175)
+D4_Extinct_data_u <- create_records_simple(
   84, 5 * seq(0, 0.175 * 1.5, length.out = 84) ^ 2
 )
 
@@ -784,20 +771,14 @@ D4_Extinct_plot <- ggplot() +
   ) +
   # Records
   geom_point(
-    aes(x = D4_Extinct_data_1c, y = 0.96),
+    aes(x = D4_Extinct_data_c, y = 0.96),
     size = 3,
     colour = "darkblue"
   ) +
   geom_point(
-    aes(x = D4_Extinct_data_1u, y = 1.04),
+    aes(x = D4_Extinct_data_u, y = 1.04),
     size = 3,
     colour = "darkred"
-  ) +
-  geom_point(
-    aes(x = c(90, 94, 98), y = 1.04),
-    pch = 1,
-    size = 3,
-    colour = "darkred", alpha = 0.25
   ) +
   # Subtitle
   annotate(
