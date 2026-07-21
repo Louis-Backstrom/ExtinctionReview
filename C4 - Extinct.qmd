@@ -48,7 +48,7 @@ models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
 Set up parallel processing:
 
 ```{r setup-parallel}
-plan(multisession, workers = floor(parallel::detectCores() * 0.5))
+plan(multisession, workers = floor(availableCores() * 0.5))
 # plan(sequential)
 ```
 
@@ -98,7 +98,7 @@ Set up functions for records, surveys, and effort:
 create_records <- function(extinction_time, pse, test_time) {
   repeat {
     counts <- rpois(length(pse), pse)
-    if (any(counts[1:test_time] > 0)) break
+    if (any(counts[1:test_time] > 0, na.rm = TRUE)) break
   }
 
   records <- rep(seq_along(counts), counts)

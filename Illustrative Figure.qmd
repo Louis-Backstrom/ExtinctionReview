@@ -419,7 +419,7 @@ C1_Extinct_plot <- ggplot() +
 # NB: not strictly the same as in the real simulations, but close enough for
 # illustrative purposes in this figure!
 C2_Extinct_data_1 <- create_records_simple(49, c(
-  2 * seq(0.5, 0, length.out = 40) ^ 2, rep(0, 9)
+  2 * seq(0.5, 0, length.out = 40)^2, rep(0, 9)
 ))
 
 C2_Extinct_plot <- ggplot() +
@@ -739,7 +739,7 @@ D3_Extinct_plot <- ggplot() +
 ```{r d-increasing}
 D4_Extinct_data_c <- create_records_simple(49, 0.175)
 D4_Extinct_data_u <- create_records_simple(
-  84, 5 * seq(0, 0.175 * 1.5, length.out = 84) ^ 2
+  84, 5 * seq(0, 0.175 * 1.5, length.out = 84)^2
 )
 
 D4_Extinct_plot <- ggplot() +
