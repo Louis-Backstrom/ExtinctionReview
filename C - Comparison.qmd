@@ -24,34 +24,72 @@ library(ggpubr)
 Load in results from simulations:
 
 ```{r load-results}
+new_models <- c("BA26B1", "BA26B2", "BA26B3", "BA26B4")
+
 best_models <- readRDS("Outputs/A/best_models.rds")
 
 C1_initials <- readRDS("Outputs/C1/Extinct/initials.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C2_initials <- readRDS("Outputs/C2/Extinct/initials.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C3_initials <- readRDS("Outputs/C3/Extinct/initials.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C4_initials <- readRDS("Outputs/C4/Extinct/initials.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 
 C1_thresholds <- readRDS("Outputs/C1/Extinct/thresholds.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C2_thresholds <- readRDS("Outputs/C2/Extinct/thresholds.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C3_thresholds <- readRDS("Outputs/C3/Extinct/thresholds.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C4_thresholds <- readRDS("Outputs/C4/Extinct/thresholds.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 
 C1_extinct <- left_join(C1_initials, C1_thresholds, by = "model") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C2_extinct <- left_join(C2_initials, C2_thresholds, by = "model") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C3_extinct <- left_join(C3_initials, C3_thresholds, by = "model") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 C4_extinct <- left_join(C4_initials, C4_thresholds, by = "model") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 ```
 
 # Extinct Comparison
@@ -71,7 +109,7 @@ C1_extinct <- C1_extinct %>%
 C2_joined <- left_join(
   C1_extinct,
   C2_extinct,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_C1", "_C2")
 ) %>%
   mutate(oob = threshold_C2 >= max_threshold)
@@ -79,7 +117,7 @@ C2_joined <- left_join(
 C3_joined <- left_join(
   C1_extinct,
   C3_extinct,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_C1", "_C3")
 ) %>%
   mutate(oob = threshold_C3 >= max_threshold)
@@ -87,20 +125,24 @@ C3_joined <- left_join(
 C4_joined <- left_join(
   C1_extinct,
   C4_extinct,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_C1", "_C4")
 ) %>%
   mutate(oob = threshold_C4 >= max_threshold)
 
 C1_plot <- ggplot(C1_extinct) +
   geom_point(
-    aes(x = power, y = threshold, shape = oob, colour = best_model),
+    aes(
+      x = power, y = threshold, shape = oob,
+      colour = best_model, alpha = new_model
+    ),
     size = 2
   ) +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -121,13 +163,17 @@ C2_plot <- ggplot(C2_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = power_C2, y = threshold_C2, shape = oob, colour = best_model),
+    aes(
+      x = power_C2, y = threshold_C2, shape = oob,
+      colour = best_model, alpha = new_model
+    ),
     size = 2
   ) +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -148,13 +194,17 @@ C3_plot <- ggplot(C3_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = power_C3, y = threshold_C3, shape = oob, colour = best_model),
+    aes(
+      x = power_C3, y = threshold_C3, shape = oob,
+      colour = best_model, alpha = new_model
+    ),
     size = 2
   ) +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -175,13 +225,17 @@ C4_plot <- ggplot(C4_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = power_C4, y = threshold_C4, shape = oob, colour = best_model),
+    aes(
+      x = power_C4, y = threshold_C4, shape = oob,
+      colour = best_model, alpha = new_model
+    ),
     size = 2
   ) +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",

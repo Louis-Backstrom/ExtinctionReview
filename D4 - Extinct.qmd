@@ -16,7 +16,7 @@ lightbox: true
 Install `dodo` (if needed):
 
 ```{r install-dodo, output=FALSE}
-renv::install("Louis-Backstrom/dodo")
+renv::install("Louis-Backstrom/dodo@development")
 ```
 
 ```{r dodo-version}
@@ -38,10 +38,13 @@ library(ggh4x)
 Get models:
 
 ```{r get-models}
-models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
+new_models <- c("BA26B2", "BA26B4")
+old_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   filter(`dodo?` == "✓", Uncertainty != "None") %>%
   pull(ID)
+
+models <- c(old_models, new_models)
 ```
 
 Set up parallel processing:
@@ -383,6 +386,31 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       test.time = test_time, n.chains = 1, n.iter = 11e3,
       n.burnin = 1e3, n.thin = 10
     ),
+    "BA26B1" = BA26B1(
+      records = records$cdis, alpha = alpha, init.time = 1, test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, lambda = c(1, 1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B2" = BA26B2(
+      records = records$udis, alpha = alpha, init.time = 1, test.time = test_time,
+      priors = list(
+        theta_max = c(1, 10), g = 0,
+        lambda_v = c(1, 1), lambda_i = c(1, 1)
+      ),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B3" = BA26B3(
+      records = records$cdis, detectability = as.data.frame(effort), alpha = alpha,
+      init.time = 1, test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, sigma = c(1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B4" = BA26B4(
+      records = records$udis, detectability = as.data.frame(effort), alpha = alpha,
+      init.time = 1, test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, sigma_v = c(1), sigma_i = c(1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
   )
 
   if (is.null(out)) {
@@ -441,6 +469,10 @@ test_model <- function(model, output, alpha, test_time) {
     "KO20B1" = output$p.extant < alpha,
     "KO20B2" = output$p.extant < alpha,
     "KO21B1" = output$p.extant < alpha,
+    "BA26B1" = output$p.extant < alpha,
+    "BA26B2" = output$p.extant < alpha,
+    "BA26B3" = output$p.extant < alpha,
+    "BA26B4" = output$p.extant < alpha,
   )
 
   if (is.null(out)) {
@@ -650,11 +682,9 @@ ggplot(model_times) +
 # Accuracy
 
 ```{r accuracy}
-models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
-  fill(everything(), .direction = "down") %>%
-  filter(Uncertainty != "None") %>%
-  pull(ID)
-
+#| fig-dpi: 600
+#| fig-width: 8
+#| fig-height: 2
 all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
 
@@ -761,6 +791,16 @@ predictions <- predictions %>%
 
 saveRDS(predictions, "Outputs/D4/Extinct/predictions.rds")
 
+predictions <- predictions %>%
+  filter(model %in% new_models) %>%
+  mutate(model = factor(model, levels = new_models))
+results_summary <- results_summary %>%
+  filter(model %in% new_models) %>%
+  mutate(model = factor(model, levels = new_models))
+thresholds <- thresholds %>%
+  filter(model %in% new_models) %>%
+  mutate(model = factor(model, levels = new_models))
+
 accuracy_plot <- ggplot() +
   # geom_ribbon(
   #   data = predictions,
@@ -788,11 +828,6 @@ accuracy_plot <- ggplot() +
     linetype = "dashed",
     colour = "darkblue"
   ) +
-  geom_label(
-    data = excluded,
-    label = "Excluded", x = (max(test_times) + extinction_time) / 2,
-    y = 0.5, fontface = "italic"
-  ) +
   scale_x_continuous(
     limits = c(extinction_time, extinction_time * 2),
     breaks = c(extinction_time, extinction_time * 1.5, extinction_time * 2),
@@ -809,32 +844,12 @@ accuracy_plot <- ggplot() +
     x = paste0("Test Time (Extinction at Time ", extinction_time, ")"),
     y = "Power"
   )
-```
 
-```{r accuracy-portrait}
-#| fig-dpi: 600
-#| fig-width: 8
-#| fig-height: 9
 accuracy_plot +
   facet_wrap2(~model,
-    drop = FALSE, ncol = 3, nrow = 6,
+    drop = FALSE, ncol = 4, nrow = 1,
     axes = "all", remove_labels = "all"
   )
-```
-
-```{r accuracy-landscape}
-#| fig-dpi: 600
-#| fig-width: 8
-#| fig-height: 4
-accuracy_plot +
-  facet_wrap2(~model,
-    drop = FALSE, ncol = 6, nrow = 3,
-    axes = "all", remove_labels = "all"
-  )
-
-ggsave("FigureS16.svg", width = 8, height = 4, device = function(...) {
-  svglite::svglite(..., system_fonts = list(mono = "Courier New"))
-})
 ```
 
 # Errors, Warnings, etc.

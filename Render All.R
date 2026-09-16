@@ -39,5 +39,4 @@ render_safe("D - Comparison.qmd")
 render_safe("Example - Alaotra Grebe.qmd")
 render_safe("Example - Forest Owlet.qmd")
 render_safe("Example - Slender-billed Curlew.qmd")
-render_safe("Examples - Comparison.qmd")
 

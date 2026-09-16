@@ -16,7 +16,7 @@ lightbox: true
 Install `dodo` (if needed):
 
 ```{r install-dodo, output=FALSE}
-renv::install("Louis-Backstrom/dodo")
+renv::install("Louis-Backstrom/dodo@development")
 ```
 
 ```{r dodo-version}
@@ -39,10 +39,13 @@ library(ggh4x)
 Get models:
 
 ```{r get-models}
-models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
+new_models <- c("BA26B1", "BA26B2", "BA26B3", "BA26B4")
+old_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
   fill(everything(), .direction = "down") %>%
   filter(`dodo?` == "✓") %>%
   pull(ID)
+
+models <- c(old_models, new_models)
 ```
 
 Set up parallel processing:
@@ -293,6 +296,33 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       test.time = test_time, n.chains = 4, n.iter = 11e4,
       n.burnin = 1e4, n.thin = 10
     ),
+    "BA26B1" = BA26B1(
+      records = records$cdis, alpha = alpha, init.time = init_time,
+      test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, lambda = c(1, 1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B2" = BA26B2(
+      records = records$udis, alpha = alpha, init.time = init_time,
+      test.time = test_time,
+      priors = list(
+        theta_max = c(1, 10), g = 0,
+        lambda_v = c(1, 1), lambda_i = c(1, 1)
+      ),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B3" = BA26B3(
+      records = records$cdis, detectability = as.data.frame(effort), alpha = alpha,
+      init.time = init_time, test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, sigma = c(1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
+    "BA26B4" = BA26B4(
+      records = records$udis, detectability = as.data.frame(effort), alpha = alpha,
+      init.time = init_time, test.time = test_time,
+      priors = list(theta_max = c(1, 10), g = 0, sigma_v = c(1), sigma_i = c(1)),
+      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+    ),
   )
 
   if (is.null(out)) {
@@ -351,6 +381,10 @@ test_model <- function(model, output, alpha, test_time) {
     "KO20B1" = output$p.extant < alpha,
     "KO20B2" = output$p.extant < alpha,
     "KO21B1" = output$p.extant < alpha,
+    "BA26B1" = output$p.extant < alpha,
+    "BA26B2" = output$p.extant < alpha,
+    "BA26B3" = output$p.extant < alpha,
+    "BA26B4" = output$p.extant < alpha,
   )
 
   if (is.null(out)) {
@@ -707,11 +741,8 @@ ggplot(model_times) +
 
 ```{r summary}
 #| fig-dpi: 600
-#| fig-width: 3
-#| fig-height: 3
-models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
-  fill(everything(), .direction = "down") %>%
-  pull(ID)
+#| fig-width: 8
+#| fig-height: 2
 
 all_results <- all_results %>%
   mutate(model = factor(model, levels = models))
@@ -725,29 +756,10 @@ excluded <- all_results %>%
 
 inc_results <- all_results %>%
   filter_out(model %in% excluded$model) %>%
-  mutate(model = factor(model, levels = models))
+  filter(model %in% new_models) %>%
+  mutate(model = factor(model, levels = new_models))
 
 cat("Excluded (NA outputs):", as.character(excluded$model))
-
-summary_plot <- inc_results %>%
-  group_by(test_time) %>%
-  summarise(extinct_count = sum(isextinct, na.rm = TRUE)) %>%
-  ggplot() +
-  geom_point(aes(x = test_time, y = extinct_count)) +
-  geom_line(aes(x = test_time, y = extinct_count), linewidth = 1) +
-  geom_hline(
-    yintercept = length(models) - nrow(excluded),
-    linetype = "dashed"
-  ) +
-  theme_classic() +
-  labs(
-    x = "Test Time",
-    y = "Models Inferring Extinction",
-    title = "C) Slender-billed Curlew"
-  )
-
-saveRDS(summary_plot, "Outputs/Slender-billed Curlew/summary_plot.rds")
-summary_plot
 
 results_plot <- ggplot() +
   geom_point(
@@ -758,11 +770,6 @@ results_plot <- ggplot() +
     data = inc_results,
     aes(x = test_time, y = as.integer(isextinct)), linewidth = 1
   ) +
-  geom_label(
-    data = excluded,
-    label = "Excluded", x = (lost_time + curr_time) / 2,
-    y = 0.5, fontface = "italic"
-  ) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -772,26 +779,10 @@ results_plot <- ggplot() +
     x = "Test Time",
     y = "Extinct (1) / Extant (0)"
   )
-```
 
-```{r summary-portrait}
-#| fig-dpi: 600
-#| fig-width: 9
-#| fig-height: 12
 results_plot +
   facet_wrap2(~model,
-    drop = FALSE, ncol = 6, nrow = 8,
-    axes = "all", remove_labels = "all"
-  )
-```
-
-```{r summary-landscape}
-#| fig-dpi: 600
-#| fig-width: 12
-#| fig-height: 6
-results_plot +
-  facet_wrap2(~model,
-    drop = FALSE, ncol = 8, nrow = 6,
+    drop = FALSE, ncol = 4, nrow = 1,
     axes = "all", remove_labels = "all"
   )
 ```
@@ -813,46 +804,22 @@ curr_extinct %>%
   group_by(isextinct) %>%
   tally()
 
-estimate_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
-  fill(everything(), .direction = "down") %>%
-  filter(
-    ID %in% (curr_extinct %>%
-      filter(isextinct == TRUE) %>%
-      pull(model)),
-    Estimate == "Yes"
-  ) %>%
-  pull(ID)
-
 curr_estimate <- curr_extinct %>%
-  filter(model %in% estimate_models, !is.na(isextinct)) %>%
-  mutate(estimate = purrr::map(output, "estimate")) %>%
-  pull(estimate) %>%
-  as.numeric()
+  filter(model %in% new_models, !is.na(isextinct)) %>%
+  mutate(estimate = unlist(purrr::map(output, "estimate"))) %>%
+  select(model, estimate)
 
 cat("Estimated extinction times:")
-length(curr_estimate)
-summary(curr_estimate)
-
-interval_models <- read_xlsx("EDE Models.xlsx", range = "B2:R50") %>%
-  fill(everything(), .direction = "down") %>%
-  filter(
-    ID %in% (curr_extinct %>%
-      filter(isextinct == TRUE) %>%
-      pull(model)),
-    Interval %in% c("Confidence", "Credible")
-  ) %>%
-  pull(ID)
+curr_estimate
 
 curr_interval <- curr_extinct %>%
-  filter(model %in% interval_models, !is.na(isextinct)) %>%
+  filter(model %in% new_models, !is.na(isextinct)) %>%
   mutate(interval = purrr::map(output, ~ .x$cred.int %||% .x$conf.int)) %>%
-  pull(interval) %>%
-  purrr::map_dbl(2) %>%
-  as.numeric()
+  unnest_wider(interval, names_sep = "_") %>%
+  select(model, interval = interval_2)
 
 cat("Estimated upper interval bounds:")
-length(curr_interval)
-summary(curr_interval)
+curr_interval
 ```
 
 # Errors, Warnings, etc.

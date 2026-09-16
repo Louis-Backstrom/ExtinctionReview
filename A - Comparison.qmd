@@ -54,6 +54,8 @@ beta <- 0.2
 #| fig-height: 3
 scenario_a <- left_join(thresholds, error_rates, by = "model")
 
+new_models <- c("BA26B1", "BA26B2", "BA26B3", "BA26B4")
+
 best_models <- scenario_a %>%
   filter(threshold < 125, error_rate < 0.1) %>%
   pull(model)
@@ -61,12 +63,21 @@ best_models <- scenario_a %>%
 saveRDS(best_models, "Outputs/A/best_models.rds")
 
 predictions_extinct <- predictions_extinct %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 predictions_extant <- predictions_extant %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 
 scenario_a <- scenario_a %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 
 print(length(best_models))
 
@@ -82,16 +93,11 @@ asis_output(paste0(header, "\n\n```text\n", best_models, "\n```"))
 extinct_plot <- ggplot() +
   geom_line(
     data = predictions_extinct,
-    aes(x = test_time, y = fit, group = model, colour = best_model),
-    linewidth = 1,
-    alpha = 0.1
-  ) +
-  geom_line(
-    data = predictions_extinct %>%
-      group_by(test_time) %>%
-      summarise(fit = mean(fit, na.rm = TRUE)),
-    aes(x = test_time, y = fit),
-    linewidth = 2
+    aes(
+      x = test_time, y = fit,
+      group = model, colour = best_model, alpha = new_model
+    ),
+    linewidth = 1
   ) +
   geom_hline(yintercept = 1 - beta, linetype = "dashed") +
   scale_x_continuous(
@@ -104,6 +110,7 @@ extinct_plot <- ggplot() +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -115,16 +122,11 @@ extinct_plot <- ggplot() +
 extant_plot <- ggplot() +
   geom_line(
     data = predictions_extant,
-    aes(x = last_time, y = fit, group = model, colour = best_model),
-    linewidth = 1,
-    alpha = 0.1
-  ) +
-  geom_line(
-    data = predictions_extant %>%
-      group_by(last_time) %>%
-      summarise(fit = mean(fit, na.rm = TRUE)),
-    aes(x = last_time, y = fit),
-    linewidth = 2
+    aes(
+      x = last_time, y = fit,
+      group = model, colour = best_model, alpha = new_model
+    ),
+    linewidth = 1
   ) +
   scale_x_continuous(
     limits = c(extinction_time * 0.5, extinction_time),
@@ -136,6 +138,7 @@ extant_plot <- ggplot() +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -152,7 +155,7 @@ comparison_plot <- ggplot(scenario_a) +
     colour = "green3", fill = NA
   ) +
   geom_point(
-    aes(x = threshold, y = error_rate, colour = best_model),
+    aes(x = threshold, y = error_rate, colour = best_model, alpha = new_model),
     size = 2
   ) +
   scale_x_continuous(
@@ -167,6 +170,7 @@ comparison_plot <- ggplot(scenario_a) +
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(

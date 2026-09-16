@@ -23,12 +23,14 @@ library(ggpubr)
 Load in results from Extinct and Extant simulations:
 
 ```{r load-results}
+new_models <- c("BA26B1", "BA26B2", "BA26B3", "BA26B4")
+
 best_models <- readRDS("Outputs/A/best_models.rds")
 
 extinct_results <- readRDS("Outputs/B/Extinct/accuracy_results.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(best_model = model %in% best_models, new_model = model %in% new_models)
 extant_results <- readRDS("Outputs/B/Extant/accuracy_results.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(best_model = model %in% best_models, new_model = model %in% new_models)
 ```
 
 Re-specify relevant parameters used in simulations:
@@ -46,19 +48,15 @@ beta <- 0.2
 extinct_plot <- ggplot() +
   geom_line(
     data = extinct_results,
-    aes(x = extinction_time, y = threshold, group = model, colour = best_model),
-    linewidth = 1,
-    alpha = 0.1
-  ) +
-  geom_line(
-    data = extinct_results %>%
-      group_by(extinction_time) %>%
-      summarise(threshold = mean(threshold, na.rm = TRUE)),
-    aes(x = extinction_time, y = threshold),
-    linewidth = 2
+    aes(
+      x = extinction_time, y = threshold,
+      group = model, colour = best_model, alpha = new_model
+    ),
+    linewidth = 1
   ) +
   scale_y_continuous(limits = c(0, 150)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   theme_classic() +
   theme(
     legend.position = "none",
@@ -74,19 +72,15 @@ extinct_plot <- ggplot() +
 extant_plot <- ggplot() +
   geom_line(
     data = extant_results,
-    aes(x = test_time, y = t1_error_rate, group = model, colour = best_model),
-    linewidth = 1,
-    alpha = 0.1
-  ) +
-  geom_line(
-    data = extant_results %>%
-      group_by(test_time) %>%
-      summarise(t1_error_rate = mean(t1_error_rate, na.rm = TRUE)),
-    aes(x = test_time, y = t1_error_rate),
-    linewidth = 2
+    aes(
+      x = test_time, y = t1_error_rate,
+      group = model, colour = best_model, alpha = new_model
+    ),
+    linewidth = 1
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(

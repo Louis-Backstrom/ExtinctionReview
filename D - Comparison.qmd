@@ -23,16 +23,30 @@ library(ggpubr)
 Load in results from simulations:
 
 ```{r load-results}
+new_models <- c("BA26B1", "BA26B2", "BA26B3", "BA26B4")
+
 best_models <- readRDS("Outputs/A/best_models.rds")
 
 D1_power_summary <- readRDS("Outputs/D1/Extinct/power_summary.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 D2_power_summary <- readRDS("Outputs/D2/Extinct/power_summary.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 D3_power_summary <- readRDS("Outputs/D3/Extinct/power_summary.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 D4_power_summary <- readRDS("Outputs/D4/Extinct/power_summary.rds") %>%
-  mutate(best_model = model %in% best_models)
+  mutate(
+    best_model = model %in% best_models,
+    new_model = model %in% new_models
+  )
 ```
 
 # Extinct Comparison
@@ -46,33 +60,34 @@ Compare D1 with D2, D3, and D4:
 D2_joined <- left_join(
   D1_power_summary,
   D2_power_summary,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_D1", "_D2")
 )
 
 D3_joined <- left_join(
   D1_power_summary,
   D3_power_summary,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_D1", "_D3")
 )
 
 D4_joined <- left_join(
   D1_power_summary,
   D4_power_summary,
-  by = c("model", "best_model"),
+  by = c("model", "best_model", "new_model"),
   suffix = c("_D1", "_D4")
 )
 
 D1_plot <- ggplot(D1_power_summary) +
   geom_point(
-    aes(x = early, y = later, colour = best_model),
+    aes(x = early, y = later, colour = best_model, alpha = new_model),
     size = 2
   ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Power Early After Extinction",
     y = "Power Later After Extinction",
@@ -93,13 +108,14 @@ D2_plot <- ggplot(D2_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = early_D2, y = later_D2, colour = best_model),
+    aes(x = early_D2, y = later_D2, colour = best_model, alpha = new_model),
     size = 2
   ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Power Early After Extinction",
     y = "Power Later After Extinction",
@@ -120,13 +136,14 @@ D3_plot <- ggplot(D3_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = early_D3, y = later_D3, colour = best_model),
+    aes(x = early_D3, y = later_D3, colour = best_model, alpha = new_model),
     size = 2
   ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Power Early After Extinction",
     y = "Power Later After Extinction",
@@ -147,13 +164,14 @@ D4_plot <- ggplot(D4_joined) +
     size = 1
   ) +
   geom_point(
-    aes(x = early_D4, y = later_D4, colour = best_model),
+    aes(x = early_D4, y = later_D4, colour = best_model, alpha = new_model),
     size = 2
   ) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
   labs(
     x = "Power Early After Extinction",
     y = "Power Later After Extinction",
