@@ -40,3 +40,9 @@ render_safe("Example - Alaotra Grebe.qmd")
 render_safe("Example - Forest Owlet.qmd")
 render_safe("Example - Slender-billed Curlew.qmd")
 
+
+render_safe("Tests - Sighting Rate.qmd")
+render_safe("Tests - Prior Lag.qmd")
+render_safe("Tests - Prior Asymptote.qmd")
+render_safe("Tests - Prior Rate.qmd")
+render_safe("Tests - Duration.qmd")

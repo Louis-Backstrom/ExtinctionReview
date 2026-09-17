@@ -1,0 +1,651 @@
+---
+title: "Duration"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+editor: visual
+execute: 
+  warning: false
+lightbox: true  
+---
+
+# Setup
+
+Install `dodo` (if needed):
+
+```{r install-dodo, output=FALSE}
+renv::install("Louis-Backstrom/dodo@development")
+```
+
+```{r dodo-version}
+cat("Using dodo version", as.character(packageVersion("dodo")))
+```
+
+Load libraries:
+
+```{r load-libraries}
+library(dodo)
+library(tidyverse)
+library(future)
+library(furrr)
+library(ggh4x)
+```
+
+Set up parallel processing:
+
+```{r setup-parallel}
+plan(multisession, workers = floor(availableCores() * 0.5))
+# plan(sequential)
+```
+
+Set key parameters:
+
+```{r overwrite}
+overwrite <- FALSE
+```
+
+```{r parameters}
+alpha <- 0.05
+beta <- 0.2
+
+# Vary
+extinction_times <- seq(50, 200, by = 25)
+
+# Keep Constant
+test_times <- seq(0, 100, by = 1)
+
+pse <- 0.175
+theta_max <- c(1, 10)
+g <- 0
+lambda <- c(1, 1)
+
+# Grids
+iterations_extinct <- 1:50
+iterations_extant <- 1:10000
+
+grid_extinct <- expand_grid(
+  iteration = iterations_extinct,
+  extinction_time = extinction_times,
+  test_time = test_times,
+) %>%
+  mutate(test_time = test_time + extinction_time)
+grid_extant <- expand_grid(
+  iteration = iterations_extant,
+  extinction_time = extinction_times
+)
+```
+
+Set up functions for records:
+
+```{r functions}
+create_records <- function(extinction_time, pse, test_time) {
+  repeat {
+    counts <- rpois(extinction_time, pse)
+    if (any(counts[1:test_time] > 0, na.rm = TRUE)) break
+  }
+
+  records <- rep(seq_along(counts), counts)
+  records <- data.frame(time = records, p_ci_min = 1, p_ci = 1, p_ci_max = 1)
+
+  records <- convert_dodo(records,
+    init.time = 1, test.time = test_time,
+    threshold = 0.9, unique = FALSE, aggregate = "max",
+    time = "time", certainty = "p_ci",
+    certainty_lower = "p_ci_min",
+    certainty_upper = "p_ci_max"
+  )
+
+  return(records$cdis)
+}
+```
+
+Set up functions for models:
+
+```{r model-functions}
+run_model <- function(records, alpha, test_time) {
+  out <- BA26B1(
+    records = records, alpha = alpha, init.time = 1, test.time = test_time,
+    priors = list(theta_max = theta_max, g = g, lambda = lambda),
+    n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+  )
+
+  return(out)
+}
+
+test_model <- function(output, alpha) {
+  return(output$p.extant < alpha)
+}
+```
+
+Set up output directories:
+
+```{r directories}
+dir.create(file.path("Outputs", "Tests", "Duration", "Extinct"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+dir.create(file.path("Outputs", "Tests", "Duration", "Extant"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+```
+
+# Run
+
+Generate datasets:
+
+```{r generate-datasets}
+set.seed(1234)
+
+data_extinct <- grid_extinct %>%
+  mutate(data = future_pmap(
+    list(test_time, extinction_time, iteration),
+    function(test_time, extinction_time, iteration) {
+      records <- create_records(extinction_time, pse, test_time)
+      return(records)
+    },
+    .options = furrr_options(seed = TRUE)
+  ))
+
+stopifnot(nrow(data_extinct) == nrow(grid_extinct))
+saveRDS(data_extinct, "Outputs/Tests/Duration/Extinct/simulated_datasets.rds")
+
+data_extant <- grid_extant %>%
+  mutate(data = future_pmap(
+    list(extinction_time, iteration),
+    function(extinction_time, iteration) {
+      records <- create_records(extinction_time, pse, extinction_time)
+      return(records)
+    },
+    .options = furrr_options(seed = TRUE)
+  ))
+
+stopifnot(nrow(data_extant) == nrow(grid_extant))
+saveRDS(data_extant, "Outputs/Tests/Duration/Extant/simulated_datasets.rds")
+```
+
+Run models:
+
+```{r run-extinct}
+model_file <- "Outputs/Tests/Duration/Extinct/output.rds"
+
+valid_file <- FALSE
+if (file.exists(model_file)) {
+  check <- readRDS(model_file)
+  if (!is.null(check) && nrow(check) == nrow(grid_extinct)) {
+    valid_file <- TRUE
+  }
+  rm(check)
+}
+
+if (!valid_file || overwrite == TRUE) {
+  results <- future_map(seq_len(nrow(grid_extinct)), function(idx) {
+    test_time <- grid_extinct$test_time[idx]
+    extinction_time <- grid_extinct$extinction_time[idx]
+    iteration <- grid_extinct$iteration[idx]
+
+    data_i <- data_extinct$data[[idx]]
+
+    iteration_start <- Sys.time()
+
+    warning_msg <- character()
+    error_msg <- NA_character_
+
+    output <- tryCatch(
+      withCallingHandlers(
+        run_model(records = data_i, alpha = alpha, test_time = test_time),
+        warning = function(w) {
+          warning_msg <<- c(warning_msg, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) {
+        error_msg <<- conditionMessage(e)
+        NULL
+      }
+    )
+
+    i_time <- difftime(Sys.time(), iteration_start, units = "secs") %>%
+      as.numeric()
+
+    result <- if (is.null(output)) {
+      tibble(
+        iteration = iteration, test_time = test_time, extinction_time = extinction_time,
+        isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
+        warning_msg = if (length(warning_msg) > 0) {
+          paste(unique(warning_msg), collapse = " | ")
+        } else {
+          NA_character_
+        },
+        error_msg = if (length(error_msg) > 0) {
+          paste(unique(error_msg), collapse = " | ")
+        } else {
+          NA_character_
+        }, run_time = i_time, end_time = Sys.time()
+      )
+    } else {
+      tibble(
+        iteration = iteration, test_time = test_time, extinction_time = extinction_time,
+        isextinct = test_model(output, alpha),
+        warning = length(warning_msg) > 0, error = FALSE,
+        warning_msg = if (length(warning_msg) > 0) {
+          paste(unique(warning_msg), collapse = " | ")
+        } else {
+          NA_character_
+        },
+        error_msg = NA_character_, run_time = i_time, end_time = Sys.time()
+      )
+    }
+
+    result <- result %>%
+      mutate(worker_pid = Sys.getpid())
+
+    rm(output)
+    gc()
+
+    return(result)
+  }, .options = furrr_options(seed = TRUE))
+
+  all_results <- bind_rows(results)
+
+  saveRDS(all_results, model_file)
+}
+```
+
+```{r run-extant}
+model_file <- "Outputs/Tests/Duration/Extant/output.rds"
+
+valid_file <- FALSE
+if (file.exists(model_file)) {
+  check <- readRDS(model_file)
+  if (!is.null(check) && nrow(check) == nrow(grid_extant)) {
+    valid_file <- TRUE
+  }
+  rm(check)
+}
+
+if (!valid_file || overwrite == TRUE) {
+  results <- future_map(seq_len(nrow(grid_extant)), function(idx) {
+    extinction_time <- grid_extant$extinction_time[idx]
+    iteration <- grid_extant$iteration[idx]
+
+    data_i <- data_extant$data[[idx]]
+
+    iteration_start <- Sys.time()
+
+    warning_msg <- character()
+    error_msg <- NA_character_
+
+    output <- tryCatch(
+      withCallingHandlers(
+        run_model(records = data_i, alpha = alpha, test_time = extinction_time),
+        warning = function(w) {
+          warning_msg <<- c(warning_msg, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) {
+        error_msg <<- conditionMessage(e)
+        NULL
+      }
+    )
+
+    i_time <- difftime(Sys.time(), iteration_start, units = "secs") %>%
+      as.numeric()
+
+    result <- if (is.null(output)) {
+      tibble(
+        iteration = iteration, extinction_time = extinction_time, last_time = max(which(data_i > 0)),
+        isextinct = NA, warning = length(warning_msg) > 0, error = TRUE,
+        warning_msg = if (length(warning_msg) > 0) {
+          paste(unique(warning_msg), collapse = " | ")
+        } else {
+          NA_character_
+        },
+        error_msg = if (length(error_msg) > 0) {
+          paste(unique(error_msg), collapse = " | ")
+        } else {
+          NA_character_
+        }, run_time = i_time, end_time = Sys.time()
+      )
+    } else {
+      tibble(
+        iteration = iteration, extinction_time = extinction_time, last_time = max(which(data_i > 0)),
+        isextinct = test_model(output, alpha),
+        warning = length(warning_msg) > 0, error = FALSE,
+        warning_msg = if (length(warning_msg) > 0) {
+          paste(unique(warning_msg), collapse = " | ")
+        } else {
+          NA_character_
+        },
+        error_msg = NA_character_, run_time = i_time, end_time = Sys.time()
+      )
+    }
+
+    result <- result %>%
+      mutate(worker_pid = Sys.getpid())
+
+    rm(output)
+    gc()
+
+    return(result)
+  }, .options = furrr_options(seed = TRUE))
+
+  all_results <- bind_rows(results)
+
+  saveRDS(all_results, model_file)
+}
+```
+
+# Accuracy
+
+```{r accuracy-extinct}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 7
+results_extinct <- readRDS("Outputs/Tests/Duration/Extinct/output.rds")
+
+summary_extinct <- results_extinct %>%
+  group_by(extinction_time, test_time, isextinct) %>%
+  tally() %>%
+  group_by(extinction_time, test_time) %>%
+  mutate(
+    prop = n / sum(n),
+    relative_test_time = test_time - extinction_time
+  )
+
+predictions_extinct <- tibble(
+  extinction_time = numeric(),
+  test_time = integer(),
+  lci = numeric(),
+  fit = numeric(),
+  uci = numeric()
+)
+
+thresholds_extinct <- tibble(
+  extinction_time = extinction_times,
+  threshold = NA_real_
+)
+
+for (extinction_time_i in extinction_times) {
+  estimates <- results_extinct %>%
+    filter(extinction_time == extinction_time_i)
+
+  accuracy_model_i <- glm(
+    data = estimates,
+    formula = isextinct ~ test_time,
+    family = "binomial"
+  )
+
+  prediction_i <- predict(accuracy_model_i, newdata = data.frame(
+    test_time = min(test_times):max(test_times) + extinction_time_i
+  ), se.fit = TRUE) %>%
+    bind_cols(data.frame(test_time = min(test_times):max(test_times) + extinction_time_i), .) %>%
+    mutate(
+      lci = plogis(fit + qnorm(0.025) * se.fit),
+      uci = plogis(fit + qnorm(0.975) * se.fit),
+      fit = plogis(fit),
+      extinction_time = extinction_time_i
+    ) %>%
+    select(extinction_time, test_time, lci, fit, uci)
+
+  predictions_extinct <- bind_rows(predictions_extinct, prediction_i)
+
+  threshold <- (qlogis(1 - beta) - accuracy_model_i$coefficients[1]) /
+    accuracy_model_i$coefficients[2] - extinction_time_i
+
+  if (threshold < 0) {
+    threshold <- 0
+  }
+
+  thresholds_extinct[thresholds_extinct$extinction_time == extinction_time_i, ]$threshold <- threshold
+}
+
+thresholds_extinct <- thresholds_extinct %>%
+  mutate(extinction_time = factor(extinction_time))
+
+saveRDS(thresholds_extinct, "Outputs/Tests/Duration/Extinct/thresholds_extinct.rds")
+
+predictions_extinct <- predictions_extinct %>%
+  mutate(
+    relative_test_time = test_time - extinction_time,
+    extinction_time = factor(extinction_time)
+  )
+
+saveRDS(predictions_extinct, "Outputs/Tests/Duration/Extinct/predictions_extinct.rds")
+
+plot_extinct <- ggplot() +
+  # geom_ribbon(
+  #   data = predictions_extinct,
+  #   aes(x = relative_test_time, ymin = lci, ymax = uci),
+  #   alpha = 0.2
+  # ) +
+  geom_line(
+    data = predictions_extinct,
+    aes(x = relative_test_time, y = fit),
+    linewidth = 1
+  ) +
+  geom_point(
+    data = summary_extinct,
+    aes(x = relative_test_time, y = isextinct, size = prop)
+  ) +
+  geom_vline(
+    data = thresholds_extinct,
+    aes(xintercept = threshold),
+    linetype = "dashed",
+    colour = "darkblue"
+  ) +
+  geom_hline(
+    data = thresholds_extinct,
+    aes(yintercept = 1 - beta),
+    linetype = "dashed",
+    colour = "darkblue"
+  ) +
+  scale_x_continuous(
+    limits = c(0, 100),
+    breaks = c(0, 50, 100),
+    expand = c(0.1, 0.1)
+  ) +
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +
+  scale_size_continuous(range = c(0, 1)) +
+  theme_classic() +
+  theme(
+    legend.position = "none", strip.background = element_blank(),
+    strip.text = element_text(family = "mono", face = "bold")
+  ) +
+  labs(
+    x = paste0("Test Time (After Extinction)"),
+    y = "Power"
+  )
+
+plot_extinct +
+  facet_wrap2(~extinction_time,
+    drop = FALSE, ncol = 5, nrow = 4,
+    axes = "all", remove_labels = "all"
+  )
+```
+
+```{r accuracy-extant}
+#| fig-dpi: 600
+#| fig-width: 9
+#| fig-height: 7
+results_extant <- readRDS("Outputs/Tests/Duration/Extant/output.rds")
+
+summary_extant <- results_extant %>%
+  group_by(extinction_time, last_time, isextinct) %>%
+  tally() %>%
+  group_by(extinction_time, last_time) %>%
+  mutate(
+    prop = n / sum(n),
+    relative_last_time = last_time - extinction_time
+  )
+
+predictions_extant <- tibble(
+  extinction_time = numeric(),
+  last_time = integer(),
+  lci = numeric(),
+  fit = numeric(),
+  uci = numeric()
+)
+
+thresholds_extant <- tibble(
+  extinction_time = extinction_times,
+  threshold = NA_real_
+)
+
+for (extinction_time_i in extinction_times) {
+  estimates <- results_extant %>%
+    filter(extinction_time == extinction_time_i)
+
+  accuracy_model_i <- glm(
+    data = estimates,
+    formula = isextinct ~ last_time,
+    family = "binomial"
+  )
+
+  prediction_i <- predict(accuracy_model_i, newdata = data.frame(
+    last_time = 0:extinction_time_i
+  ), se.fit = TRUE) %>%
+    bind_cols(data.frame(last_time = 0:extinction_time_i), .) %>%
+    mutate(
+      lci = plogis(fit + qnorm(0.025) * se.fit),
+      uci = plogis(fit + qnorm(0.975) * se.fit),
+      fit = plogis(fit),
+      extinction_time = extinction_time_i
+    ) %>%
+    select(extinction_time, last_time, lci, fit, uci)
+
+  predictions_extant <- bind_rows(predictions_extant, prediction_i)
+
+  threshold <- (qlogis(alpha) - accuracy_model_i$coefficients[1]) /
+    accuracy_model_i$coefficients[2] - extinction_time_i
+
+  if (threshold > 0) {
+    if (threshold > 1e6) {
+      threshold <- 0
+    } else {
+      threshold <- 0
+    }
+  } else if (threshold < -extinction_time_i) {
+    threshold <- -extinction_time_i
+  }
+
+  thresholds_extant[thresholds_extant$extinction_time == extinction_time_i, ]$threshold <- threshold
+}
+
+thresholds_extant <- thresholds_extant %>%
+  mutate(extinction_time = factor(extinction_time))
+
+saveRDS(thresholds_extant, "Outputs/Tests/Duration/Extant/thresholds.rds")
+
+predictions_extant <- predictions_extant %>%
+  mutate(
+    relative_last_time = last_time - extinction_time,
+    extinction_time = factor(extinction_time)
+  )
+
+saveRDS(predictions_extant, "Outputs/Tests/Duration/Extant/predictions_extant.rds")
+
+error_rates <- results_extant %>%
+  group_by(extinction_time, .drop = FALSE) %>%
+  summarise(error_rate = mean(isextinct, na.rm = TRUE)) %>%
+  mutate(extinction_time = factor(extinction_time))
+
+saveRDS(error_rates, "Outputs/Tests/Duration/Extant/error_rates.rds")
+
+plot_extant <- ggplot() +
+  # geom_ribbon(
+  #   data = predictions_extant,
+  #   aes(x = relative_last_time, ymin = lci, ymax = uci),
+  #   alpha = 0.2
+  # ) +
+  geom_line(
+    data = predictions_extant,
+    aes(x = relative_last_time, y = fit),
+    linewidth = 1
+  ) +
+  geom_point(
+    data = summary_extant,
+    aes(x = relative_last_time, y = isextinct, size = prop)
+  ) +
+  geom_vline(
+    data = thresholds_extant,
+    aes(xintercept = threshold),
+    linetype = "dashed",
+    colour = "darkblue"
+  ) +
+  geom_hline(
+    data = thresholds_extant,
+    aes(yintercept = alpha),
+    linetype = "dashed",
+    colour = "darkblue"
+  ) +
+  geom_text(
+    data = error_rates,
+    aes(label = scales::percent(error_rate, accuracy = 0.1)),
+    x = -max(extinction_times) * 0.5, y = alpha * 2,
+    hjust = 0, vjust = 0
+  ) +
+  scale_x_continuous(
+    limits = c(-max(extinction_times), 0),
+    breaks = seq(-max(extinction_times), 0, length.out = 5),
+    expand = c(0.1, 0.1)
+  ) +
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +
+  scale_size_continuous(range = c(0, 1)) +
+  theme_classic() +
+  theme(
+    legend.position = "none", strip.background = element_blank(),
+    strip.text = element_text(family = "mono", face = "bold")
+  ) +
+  labs(
+    x = paste0("Relative Time of Last Sighting"),
+    y = "Type I Error Rate"
+  )
+
+plot_extant +
+  facet_wrap2(~extinction_time,
+    drop = FALSE, ncol = 5, nrow = 4,
+    axes = "all", remove_labels = "all"
+  )
+```
+
+# Comparison
+
+```{r comparison}
+#| fig-dpi: 600
+#| fig-width: 4
+#| fig-height: 4
+duration <- left_join(thresholds_extinct, error_rates, by = "extinction_time")
+
+comparison_plot <- ggplot(duration) +
+  geom_line(
+    aes(x = threshold, y = error_rate),
+    linewidth = 1
+  ) +
+  geom_point(
+    aes(x = threshold, y = error_rate),
+    size = 2
+  ) +
+  scale_x_continuous(
+    limits = c(0, 40),
+    breaks = seq(0, 40, by = 10),
+    expand = expansion(mult = c(0.05, 0.1))
+  ) +
+  scale_y_continuous(limits = c(0, 0.2), breaks = seq(0, 0.2, by = 0.05)) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(
+    title = "Duration",
+    x = paste0(
+      "Time to Achieve ", (1 - beta) * 100,
+      "% Power\n(After Extinction)"
+    ),
+    y = "Average Type I Error Rate"
+  )
+
+comparison_plot
+```
