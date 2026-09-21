@@ -63,21 +63,24 @@ best_models <- scenario_a %>%
 saveRDS(best_models, "Outputs/A/best_models.rds")
 
 predictions_extinct <- predictions_extinct %>%
-  mutate(
-    best_model = model %in% best_models,
-    new_model = model %in% new_models
-  )
+  mutate(model_class = case_when(
+    model %in% new_models ~ "New",
+    model %notin% new_models & model %in% best_models ~ "Best",
+    model %notin% new_models & model %notin% best_models ~ "Old"
+  ))
 predictions_extant <- predictions_extant %>%
-  mutate(
-    best_model = model %in% best_models,
-    new_model = model %in% new_models
-  )
+  mutate(model_class = case_when(
+    model %in% new_models ~ "New",
+    model %notin% new_models & model %in% best_models ~ "Best",
+    model %notin% new_models & model %notin% best_models ~ "Old"
+  ))
 
 scenario_a <- scenario_a %>%
-  mutate(
-    best_model = model %in% best_models,
-    new_model = model %in% new_models
-  )
+  mutate(model_class = case_when(
+    model %in% new_models ~ "New",
+    model %notin% new_models & model %in% best_models ~ "Best",
+    model %notin% new_models & model %notin% best_models ~ "Old"
+  ))
 
 print(length(best_models))
 
@@ -95,7 +98,7 @@ extinct_plot <- ggplot() +
     data = predictions_extinct,
     aes(
       x = test_time, y = fit,
-      group = model, colour = best_model, alpha = new_model
+      group = model, colour = model_class, alpha = model_class
     ),
     linewidth = 1
   ) +
@@ -109,8 +112,12 @@ extinct_plot <- ggplot() +
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
-  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
-  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
+  scale_colour_manual(values = c(
+    "New" = "blue", "Best" = "green3", "Old" = "black")
+  ) +
+  scale_alpha_manual(values = c(
+    "New" = 1, "Best" = 0.1, "Old" = 0.1)
+  ) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -124,7 +131,7 @@ extant_plot <- ggplot() +
     data = predictions_extant,
     aes(
       x = last_time, y = fit,
-      group = model, colour = best_model, alpha = new_model
+      group = model, colour = model_class, alpha = model_class
     ),
     linewidth = 1
   ) +
@@ -137,8 +144,12 @@ extant_plot <- ggplot() +
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
-  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
-  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
+  scale_colour_manual(values = c(
+    "New" = "blue", "Best" = "green3", "Old" = "black")
+  ) +
+  scale_alpha_manual(values = c(
+    "New" = 1, "Best" = 0.1, "Old" = 0.1)
+  ) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -155,7 +166,7 @@ comparison_plot <- ggplot(scenario_a) +
     colour = "green3", fill = NA
   ) +
   geom_point(
-    aes(x = threshold, y = error_rate, colour = best_model, alpha = new_model),
+    aes(x = threshold, y = error_rate, colour = model_class, alpha = model_class),
     size = 2
   ) +
   scale_x_continuous(
@@ -169,8 +180,12 @@ comparison_plot <- ggplot(scenario_a) +
     expand = expansion(mult = c(0.05, 0.1))
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
-  scale_colour_manual(values = c("TRUE" = "green3", "FALSE" = "black")) +
-  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.1)) +
+  scale_colour_manual(values = c(
+    "New" = "blue", "Best" = "green3", "Old" = "black")
+  ) +
+  scale_alpha_manual(values = c(
+    "New" = 1, "Best" = 0.1, "Old" = 0.1)
+  ) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
