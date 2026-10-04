@@ -113,11 +113,11 @@ extinct_plot <- ggplot() +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -145,11 +145,11 @@ extant_plot <- ggplot() +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_size_continuous(range = c(0, 1)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(
@@ -181,11 +181,11 @@ comparison_plot <- ggplot(scenario_a) +
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   theme_classic() +
   theme(legend.position = "none") +
   labs(

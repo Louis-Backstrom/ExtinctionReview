@@ -154,11 +154,11 @@ C1_plot <- ggplot(C1_extinct) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -189,11 +189,11 @@ C2_plot <- ggplot(C2_joined) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -224,11 +224,11 @@ C3_plot <- ggplot(C3_joined) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
@@ -259,11 +259,11 @@ C4_plot <- ggplot(C4_joined) +
   scale_y_continuous(limits = c(0, max_threshold), oob = squish) +
   scale_shape_manual(values = c("TRUE" = 17, "FALSE" = 16)) +
   scale_colour_manual(values = c(
-    "New" = "blue", "Best" = "green3", "Old" = "black")
-  ) +
+    "New" = "blue", "Best" = "green3", "Old" = "black"
+  )) +
   scale_alpha_manual(values = c(
-    "New" = 1, "Best" = 0.1, "Old" = 0.1)
-  ) +
+    "New" = 1, "Best" = 0.1, "Old" = 0.1
+  )) +
   labs(
     x = "Initial Power at Extinction",
     y = "Time to Achieve 80% Power",
