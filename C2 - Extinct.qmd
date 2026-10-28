@@ -51,7 +51,7 @@ models <- c(old_models, new_models)
 Set up parallel processing:
 
 ```{r setup-parallel}
-plan(multisession, workers = floor(availableCores() * 0.5))
+plan(multisession, workers = floor(availableCores() * 0.75))
 # plan(sequential)
 ```
 
@@ -317,17 +317,20 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
     "BA26B3" = BA26B3(
-      records = records$cdis, detectability = as.data.frame(effort), alpha = alpha,
+      records = records$cdis, effort = as.data.frame(effort), alpha = alpha,
       init.time = 1, test.time = test_time, tol = 0.999,
-      fix.intercept = NULL, scale.detectability = FALSE,
-      priors = list(theta_max = c(1, 10), g = 0, sigma = c(10)),
+      scale.effort = FALSE, variable.selection = FALSE,
+      priors = list(theta_max = c(1, 10), g = 0, rate = 10, inclusion = NULL),
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
     "BA26B4" = BA26B4(
-      records = records$udis, detectability = as.data.frame(effort), alpha = alpha,
+      records = records$udis, effort = as.data.frame(effort), alpha = alpha,
       init.time = 1, test.time = test_time, tol = 0.999,
-      fix.intercept = NULL, scale.detectability = FALSE,
-      priors = list(theta_max = c(1, 10), g = 0, sigma_v = c(10), sigma_i = c(10)),
+      scale.effort = FALSE, variable.selection = FALSE,
+      priors = list(
+        theta_max = c(1, 10), g = 0, rate_v = 10, rate_i = 10,
+        inclusion_v = NULL, inclusion_i = NULL
+      ),
       n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
     ),
   )

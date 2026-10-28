@@ -34,6 +34,7 @@ library(rgbif)
 library(future)
 library(furrr)
 library(ggh4x)
+library(slider)
 ```
 
 Get models:
@@ -51,7 +52,7 @@ models <- c(old_models, new_models)
 Set up parallel processing:
 
 ```{r setup-parallel}
-plan(multisession, workers = floor(availableCores() * 0.5))
+plan(multisession, workers = floor(availableCores() * 0.75))
 # plan(sequential)
 ```
 
@@ -99,10 +100,10 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     "BU95F2" = BU95F2(records = records$cdis),
     "BU95F3" = BU95F3(records = records$cdis),
     "MA97F1" = MA97F1(
-      records = records$cdis, effort = effort, alpha = alpha,
+      records = records$cdis, effort = effort[, 1], alpha = alpha,
       init.time = init_time
     ),
-    "MC98F1" = MC98F1(records = records$cdis, effort = effort),
+    "MC98F1" = MC98F1(records = records$cdis, effort = effort[, 1]),
     "MC99F1" = MC99F1(
       records = records$ccon, alpha = alpha,
       test.time = test_time
@@ -299,34 +300,34 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
     "BA26B1" = BA26B1(
       records = records$cdis, alpha = alpha, init.time = init_time,
       test.time = test_time, tol = 0.999,
-      priors = list(theta_max = c(1, 10), g = 0, lambda = c(1, 1)),
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+      priors = list(theta_max = c(1, 10), g = 10, lambda = c(1, 1)),
+      n.chains = 1, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "BA26B2" = BA26B2(
       records = records$udis, alpha = alpha, init.time = init_time,
       test.time = test_time, tol = 0.999,
       priors = list(
-        theta_max = c(1, 10), g = 0,
+        theta_max = c(1, 10), g = 10,
         lambda_v = c(1, 1), lambda_i = c(1, 1)
       ),
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+      n.chains = 1, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "BA26B3" = BA26B3(
-      records = records$cdis, detectability = as.data.frame(effort),
+      records = records$cdis, effort = as.data.frame(effort),
       alpha = alpha, init.time = init_time, test.time = test_time, tol = 0.999,
-      fix.intercept = -100, scale.detectability = TRUE,
-      priors = list(theta_max = c(1, 10), g = 0, sigma = c(100)),
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+      scale.effort = TRUE, variable.selection = FALSE,
+      priors = list(theta_max = c(1, 10), g = 10, rate = 10, inclusion = NULL),
+      n.chains = 1, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "BA26B4" = BA26B4(
-      records = records$udis, detectability = as.data.frame(effort),
+      records = records$udis, effort = as.data.frame(effort),
       alpha = alpha, init.time = init_time, test.time = test_time, tol = 0.999,
-      fix.intercept = -100, scale.detectability = TRUE,
+      scale.effort = TRUE, variable.selection = FALSE,
       priors = list(
-        theta_max = c(1, 10), g = 0,
-        sigma_v = c(100), sigma_i = c(100)
+        theta_max = c(1, 10), g = 10, rate_v = 10, rate_i = 10,
+        inclusion_v = NULL, inclusion_i = NULL
       ),
-      n.chains = 1, n.iter = 11e3, n.burnin = 1e3, n.thin = 10
+      n.chains = 1, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
   )
 
@@ -500,43 +501,71 @@ Create or read in effort proxy:
 ```{r effort, message=FALSE, warning=FALSE}
 core_countries <- "MG"
 
+bases <- list("s" = "PRESERVED_SPECIMEN", "a" = NULL)
+
 if (!file.exists("Outputs/Alaotra Grebe/effort_full.rds") | overwrite) {
   effort_raw <- tibble(
     year = integer(),
     country = character(),
+    basis = character(),
     species = character()
   )
 
   for (country in core_countries) {
     for (year in init_time:curr_time) {
-      species_list <- occ_search(
-        taxonKey = 212, # Birds
-        country = country,
-        year = year,
-        facet = "speciesKey",
-        facetLimit = 10000,
-        limit = 0 # Just get facets, no occurrences
-      )$facets$speciesKey$name
+      for (i in 1:length(bases)) {
+        species_list <- occ_search(
+          taxonKey = 212, # Birds
+          country = country,
+          basisOfRecord = bases[[i]],
+          year = year,
+          facet = "speciesKey",
+          facetLimit = 10000,
+          limit = 0 # Just get facets, no occurrences
+        )$facets$speciesKey$name
 
-      species_list <- tibble(
-        year = year,
-        country = country,
-        species = species_list
-      )
+        species_list <- tibble(
+          year = year,
+          country = country,
+          basis = names(bases)[i],
+          species = species_list
+        )
 
-      effort_raw <- bind_rows(effort_raw, species_list)
+        effort_raw <- bind_rows(effort_raw, species_list)
 
-      Sys.sleep(0.1)
+        Sys.sleep(0.1)
+      }
     }
   }
 
   effort_full <- effort_raw %>%
     drop_na(species) %>%
-    group_by(year) %>%
+    group_by(year, basis) %>%
     summarise(n_species = n_distinct(species)) %>%
+    pivot_wider(names_from = basis, values_from = n_species) %>%
     left_join(tibble(year = init_time:curr_time), ., by = "year") %>%
-    mutate(n_species = replace_na(n_species, 0)) %>%
-    pull(n_species)
+    mutate(across(2:ncol(.), ~ replace_na(.x, 0)))
+
+  weights <- dnorm(-10:10, sd = 2)
+
+  effort_full <- effort_full %>%
+    mutate(across(
+      everything(),
+      \(x) slide_dbl(
+        x,
+        ~ {
+          n <- length(.x)
+          w <- weights[((length(weights) - n) %/% 2 + 1):
+          ((length(weights) - n) %/% 2 + n)]
+          weighted.mean(.x, w)
+        },
+        .before = 10, .after = 10
+      )
+    ))
+
+  effort_full <- effort_full %>%
+    select("a", "s") %>%
+    as.data.frame()
 } else {
   effort_full <- readRDS("Outputs/Alaotra Grebe/effort_full.rds")
 }
@@ -552,7 +581,7 @@ saveRDS(effort_full, "Outputs/Alaotra Grebe/effort_full.rds")
 
 # Run
 
-```{r}
+```{r set-seed}
 set.seed(1234)
 ```
 
@@ -595,9 +624,17 @@ for (model in models) {
         aggregate = "max", time = "year", certainty = "p_ci",
         certainty_lower = "p_ci_min", certainty_upper = "p_ci_max"
       )
+
       surveys <- surveys_full %>%
         filter(time <= test_time)
-      effort <- effort_full[1:(test_time - init_time + 1)]
+
+      if (is.data.frame(effort_full)) {
+        effort <- effort_full[1:(test_time - init_time + 1), , drop = FALSE]
+      } else if (is.vector(effort_full)) {
+        effort <- effort_full[1:(test_time - init_time + 1)]
+      } else {
+        stop("invalid effort format")
+      }
 
       iteration_start <- Sys.time()
 

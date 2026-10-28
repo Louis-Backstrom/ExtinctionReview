@@ -36,7 +36,7 @@ library(ggh4x)
 Set up parallel processing:
 
 ```{r setup-parallel}
-plan(multisession, workers = floor(availableCores() * 0.5))
+plan(multisession, workers = floor(availableCores() * 0.75))
 # plan(sequential)
 ```
 
