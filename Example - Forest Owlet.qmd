@@ -313,14 +313,14 @@ run_model <- function(model, records, surveys, effort, alpha, test_time) {
       n.chains = 4, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "BA26B3" = BA26B3(
-      records = records$cdis, effort = as.data.frame(effort),
+      records = records$cdis, effort = as.data.frame(effort[, 1:4]),
       alpha = alpha, init.time = init_time, test.time = test_time,
       scale.effort = TRUE, variable.selection = TRUE,
       priors = list(theta_max = c(1, 10), g = 10, rate = 10, inclusion = NULL),
       n.chains = 4, n.iter = 11e4, n.burnin = 1e4, n.thin = 10
     ),
     "BA26B4" = BA26B4(
-      records = records$udis, effort = as.data.frame(effort),
+      records = records$udis, effort = as.data.frame(effort[, 1:4]),
       alpha = alpha, init.time = init_time, test.time = test_time,
       scale.effort = TRUE, variable.selection = TRUE,
       priors = list(
