@@ -419,10 +419,7 @@ saveRDS(rse_data, "Outputs/B/Extant/simulated_datasets.rds")
 Run models:
 
 ```{r run-models}
-run_grid <- expand.grid(
-  iteration = iterations,
-  test_time = test_times
-)
+run_grid <- expand.grid(test_time = test_times, iteration = iterations)
 
 if (file.exists("Outputs/B/Extant/model_times.rds")) {
   model_times <- readRDS("Outputs/B/Extant/model_times.rds")
